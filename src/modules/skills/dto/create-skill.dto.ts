@@ -4,7 +4,6 @@ import {
   IsOptional,
   IsEnum,
   IsBoolean,
-  IsMongoId,
 } from 'class-validator';
 
 export class CreateSkillDto {

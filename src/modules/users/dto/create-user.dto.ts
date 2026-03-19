@@ -6,8 +6,6 @@ import {
   IsArray,
   IsBoolean,
   IsNumber,
-  IsObject,
-  IsDate,
 } from 'class-validator';
 import { Role } from '../../../common/enums/roles.enum';
 import { ApprovalStatus } from '../../../common/enums/approval.enum';
@@ -15,7 +13,6 @@ import {
   UserStatus,
   AddressType,
   DocumentType,
-  DocumentVerificationStatus,
 } from '../../../common/enums/status.enum';
 
 export class CreateAddressDto {
