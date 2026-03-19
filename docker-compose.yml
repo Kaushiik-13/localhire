@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: localhire-mongodb
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-localhire}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - localhire-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: localhire-api
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-password123}@mongodb:27017/${MONGO_DB:-localhire}?authSource=admin
+      MONGODB_DB_NAME: ${MONGO_DB:-localhire}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+    depends_on:
+      - mongodb
+    networks:
+      - localhire-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  localhire-network:
+    driver: bridge
