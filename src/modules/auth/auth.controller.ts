@@ -18,14 +18,19 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { CreateAdminDto } from './dto/admin.dto';
-import { UpdateAdminDto } from './dto/admin.dto';
-import { LoginDto } from './dto/login.dto';
+import { CreateAdminInputDto } from './dto/inputs/admin.input.dto';
+import { UpdateAdminInputDto } from './dto/inputs/admin.input.dto';
+import { LoginInputDto } from './dto/inputs/login.input.dto';
 import {
-  ForgotPasswordDto,
-  VerifyOtpDto,
-  ResetPasswordDto,
-} from './dto/forgot-password.dto';
+  ForgotPasswordInputDto,
+  VerifyOtpInputDto,
+  ResetPasswordInputDto,
+} from './dto/inputs/forgot-password.input.dto';
+import { AdminOutputDto } from './dto/outputs/admin.output.dto';
+import { AdminLoginOutputDto } from './dto/outputs/admin-login.output.dto';
+import { AdminListOutputDto } from './dto/outputs/admin-list.output.dto';
+import { MessageOutputDto } from './dto/outputs/message.output.dto';
+import { VerifyOtpOutputDto } from './dto/outputs/verify-otp.output.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles_decorator } from '../../common/decorators/roles.decorator';
@@ -46,49 +51,85 @@ export class AuthController {
 
   @Post('first-admin')
   @ApiOperation({ summary: 'Create first admin (only when no admins exist)' })
-  @ApiResponse({ status: 201, description: 'First admin created' })
-  @ApiResponse({ status: 403, description: 'Admin already exists' })
-  async createFirstAdmin(@Body() createAdminDto: CreateAdminDto) {
-    return this.authService.createFirstAdmin(createAdminDto);
+  @ApiResponse({
+    status: 201,
+    type: AdminLoginOutputDto,
+    description: 'First admin created',
+  })
+  @ApiResponse({
+    status: 403,
+    type: MessageOutputDto,
+    description: 'Admin already exists',
+  })
+  async createFirstAdmin(@Body() input: CreateAdminInputDto) {
+    return this.authService.createFirstAdmin(input);
   }
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset OTP via email' })
-  @ApiResponse({ status: 200, description: 'OTP sent if email exists' })
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(forgotPasswordDto.email);
+  @ApiResponse({
+    status: 200,
+    type: MessageOutputDto,
+    description: 'OTP sent if email exists',
+  })
+  async forgotPassword(@Body() input: ForgotPasswordInputDto) {
+    return this.authService.forgotPassword(input.email);
   }
 
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify OTP for password reset' })
-  @ApiResponse({ status: 200, description: 'OTP verified' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
-  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
-    return this.authService.verifyOtp(verifyOtpDto.email, verifyOtpDto.otp);
+  @ApiResponse({
+    status: 200,
+    type: VerifyOtpOutputDto,
+    description: 'OTP verified',
+  })
+  @ApiResponse({
+    status: 400,
+    type: MessageOutputDto,
+    description: 'Invalid or expired OTP',
+  })
+  verifyOtp(@Body() input: VerifyOtpInputDto) {
+    return this.authService.verifyOtp(input.email, input.otp);
   }
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password using OTP' })
-  @ApiResponse({ status: 200, description: 'Password reset successful' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+  @ApiResponse({
+    status: 200,
+    type: MessageOutputDto,
+    description: 'Password reset successful',
+  })
+  @ApiResponse({
+    status: 400,
+    type: MessageOutputDto,
+    description: 'Invalid or expired OTP',
+  })
+  async resetPassword(@Body() input: ResetPasswordInputDto) {
     return this.authService.resetPassword(
-      resetPasswordDto.email,
-      resetPasswordDto.otp,
-      resetPasswordDto.newPassword,
+      input.email,
+      input.otp,
+      input.newPassword,
     );
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Admin login' })
-  @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async adminLogin(@Body() loginDto: LoginDto) {
-    return this.authService.adminLogin(loginDto.phone, loginDto.password);
+  @ApiResponse({
+    status: 200,
+    type: AdminLoginOutputDto,
+    description: 'Login successful',
+  })
+  @ApiResponse({
+    status: 401,
+    type: MessageOutputDto,
+    description: 'Invalid credentials',
+  })
+  async adminLogin(@Body() input: LoginInputDto) {
+    return this.authService.adminLogin(input.phone, input.password);
   }
 
   @Post('admin')
@@ -96,13 +137,21 @@ export class AuthController {
   @Roles_decorator(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new admin (admin only)' })
-  @ApiResponse({ status: 201, description: 'Admin created' })
-  @ApiResponse({ status: 409, description: 'Phone already registered' })
+  @ApiResponse({
+    status: 201,
+    type: MessageOutputDto,
+    description: 'Admin created',
+  })
+  @ApiResponse({
+    status: 409,
+    type: MessageOutputDto,
+    description: 'Phone already registered',
+  })
   async createAdmin(
-    @Body() createAdminDto: CreateAdminDto,
+    @Body() input: CreateAdminInputDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.authService.createAdmin(createAdminDto, req.user.userId);
+    return this.authService.createAdmin(input, req.user.userId);
   }
 
   @Get('admin')
@@ -110,7 +159,11 @@ export class AuthController {
   @Roles_decorator(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all admins (admin only)' })
-  @ApiResponse({ status: 200, description: 'List of all admins' })
+  @ApiResponse({
+    status: 200,
+    type: AdminListOutputDto,
+    description: 'List of all admins',
+  })
   async getAllAdmins() {
     return this.authService.getAllAdmins();
   }
@@ -120,8 +173,16 @@ export class AuthController {
   @Roles_decorator(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get admin by ID (admin only)' })
-  @ApiResponse({ status: 200, description: 'Admin details' })
-  @ApiResponse({ status: 404, description: 'Admin not found' })
+  @ApiResponse({
+    status: 200,
+    type: AdminOutputDto,
+    description: 'Admin details',
+  })
+  @ApiResponse({
+    status: 404,
+    type: MessageOutputDto,
+    description: 'Admin not found',
+  })
   async getAdminById(@Param('id') id: string) {
     return this.authService.getAdminById(id);
   }
@@ -131,15 +192,27 @@ export class AuthController {
   @Roles_decorator(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update admin (admin only)' })
-  @ApiResponse({ status: 200, description: 'Admin updated' })
-  @ApiResponse({ status: 404, description: 'Admin not found' })
-  @ApiResponse({ status: 403, description: 'Cannot update own account' })
+  @ApiResponse({
+    status: 200,
+    type: MessageOutputDto,
+    description: 'Admin updated',
+  })
+  @ApiResponse({
+    status: 404,
+    type: MessageOutputDto,
+    description: 'Admin not found',
+  })
+  @ApiResponse({
+    status: 403,
+    type: MessageOutputDto,
+    description: 'Cannot update own account',
+  })
   async updateAdmin(
     @Param('id') id: string,
-    @Body() updateAdminDto: UpdateAdminDto,
+    @Body() input: UpdateAdminInputDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.authService.updateAdmin(id, updateAdminDto, req.user.userId);
+    return this.authService.updateAdmin(id, input, req.user.userId);
   }
 
   @Delete('admin/:id')
@@ -148,10 +221,19 @@ export class AuthController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete admin (admin only)' })
-  @ApiResponse({ status: 200, description: 'Admin deleted' })
-  @ApiResponse({ status: 404, description: 'Admin not found' })
+  @ApiResponse({
+    status: 200,
+    type: MessageOutputDto,
+    description: 'Admin deleted',
+  })
+  @ApiResponse({
+    status: 404,
+    type: MessageOutputDto,
+    description: 'Admin not found',
+  })
   @ApiResponse({
     status: 403,
+    type: MessageOutputDto,
     description: 'Cannot delete own account or last admin',
   })
   async deleteAdmin(

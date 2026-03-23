@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreateAdminDto {
+export class CreateAdminInputDto {
   @ApiProperty({ example: 'John Doe' })
   @IsString()
   @IsNotEmpty()
@@ -23,7 +23,7 @@ export class CreateAdminDto {
   password: string;
 }
 
-export class UpdateAdminDto {
+export class UpdateAdminInputDto {
   @ApiPropertyOptional({ example: 'John Doe' })
   @IsString()
   @IsOptional()

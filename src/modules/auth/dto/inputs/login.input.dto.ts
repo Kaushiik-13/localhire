@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class LoginDto {
+export class LoginInputDto {
   @ApiProperty({ example: '+1234567890' })
   @IsString()
   @IsNotEmpty()

@@ -14,8 +14,8 @@ import { User, UserDocument } from '../../schemas/user.schema';
 import { Role } from '../../common/enums/roles.enum';
 import { UserStatus } from '../../common/enums/status.enum';
 import { Types } from 'mongoose';
-import { CreateAdminDto } from './dto/admin.dto';
-import { UpdateAdminDto } from './dto/admin.dto';
+import { CreateAdminInputDto } from './dto/inputs/admin.input.dto';
+import { UpdateAdminInputDto } from './dto/inputs/admin.input.dto';
 import { EmailService } from '../email/email.service';
 
 interface OtpEntry {
@@ -136,7 +136,7 @@ export class AuthService {
     };
   }
 
-  async createFirstAdmin(createAdminDto: CreateAdminDto) {
+  async createFirstAdmin(createAdminDto: CreateAdminInputDto) {
     const adminCount = await this.userModel.countDocuments({
       roles: { $in: [Role.ADMIN] },
     });
@@ -198,7 +198,10 @@ export class AuthService {
     };
   }
 
-  async createAdmin(createAdminDto: CreateAdminDto, requestingAdminId: string) {
+  async createAdmin(
+    createAdminDto: CreateAdminInputDto,
+    requestingAdminId: string,
+  ) {
     const existingUser = await this.userModel.findOne({
       phone: createAdminDto.phone,
     });
@@ -257,7 +260,7 @@ export class AuthService {
 
   async updateAdmin(
     id: string,
-    updateAdminDto: UpdateAdminDto,
+    updateAdminDto: UpdateAdminInputDto,
     requestingAdminId: string,
   ) {
     if (id === requestingAdminId) {
