@@ -6,10 +6,6 @@ export class EmailService {
   constructor(private configService: ConfigService) {}
 
   async sendOtpEmail(email: string, otp: string): Promise<boolean> {
-    const fromEmail = this.configService.get<string>(
-      'SMTP_FROM_EMAIL',
-      'noreply@localhire.com',
-    );
     const subject = 'LocalHire - Password Reset OTP';
 
     const html = `
@@ -24,48 +20,57 @@ export class EmailService {
       </div>
     `;
 
-    return this.sendEmail(fromEmail, email, subject, html);
+    return this.sendEmail(email, subject, html);
   }
 
   private async sendEmail(
-    from: string,
     to: string,
     subject: string,
     html: string,
   ): Promise<boolean> {
-    const smtpHost = this.configService.get<string>('SMTP_HOST');
-    const smtpPort = this.configService.get<string>('SMTP_PORT');
-    const smtpUser = this.configService.get<string>('SMTP_USER');
-    const smtpPass = this.configService.get<string>('SMTP_PASS');
+    const resendApiKey = this.configService.get<string>('RESEND_API_KEY');
+    const fromEmail = this.configService.get<string>(
+      'SMTP_FROM_EMAIL',
+      'onboarding@resend.dev',
+    );
 
-    if (!smtpHost || !smtpUser || !smtpPass) {
-      console.log(`[Email Mock] To: ${to}, Subject: ${subject}`);
+    if (!resendApiKey) {
+      console.log(
+        `[Email Mock] To: ${to}, Subject: ${subject}, OTP: ${this.extractOtp(html)}`,
+      );
       return true;
     }
 
     try {
-      const nodemailer = await import('nodemailer');
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: parseInt(smtpPort || '587', 10),
-        secure: smtpPort === '465',
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${resendApiKey}`,
         },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [to],
+          subject: subject,
+          html: html,
+        }),
       });
 
-      await transporter.sendMail({
-        from,
-        to,
-        subject,
-        html,
-      });
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Resend API error:', error);
+        return false;
+      }
 
       return true;
     } catch (error) {
       console.error('Email send error:', error);
       return false;
     }
+  }
+
+  private extractOtp(html: string): string {
+    const match = html.match(/<strong>(\d{6})<\/strong>/);
+    return match ? match[1] : 'N/A';
   }
 }
