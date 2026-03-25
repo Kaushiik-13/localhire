@@ -12,7 +12,7 @@ import { ServiceBookingsModule } from './modules/service-bookings/service-bookin
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SkillsModule } from './modules/skills/skills.module';
-import { CategoriesModule } from './modules/categories/categories.module';
+import { LanguagesModule } from './modules/languages/languages.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { EmailModule } from './modules/email/email.module';
 
@@ -40,7 +40,7 @@ import { EmailModule } from './modules/email/email.module';
     ReviewsModule,
     NotificationsModule,
     SkillsModule,
-    CategoriesModule,
+    LanguagesModule,
     UploadsModule,
     EmailModule,
   ],

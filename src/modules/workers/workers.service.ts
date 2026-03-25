@@ -2,8 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Worker, WorkerDocument } from '../../schemas/worker.schema';
-import { CreateWorkerDto } from './dto/create-worker.dto';
-import { UpdateWorkerDto } from './dto/update-worker.dto';
+import { CreateWorkerInputDto } from './dto/inputs/worker.input.dto';
+import { UpdateWorkerInputDto } from './dto/inputs/worker.input.dto';
+import { WorkerOutputDto } from './dto/outputs/worker.output.dto';
 
 @Injectable()
 export class WorkersService {
@@ -11,11 +12,14 @@ export class WorkersService {
     @InjectModel(Worker.name) private workerModel: Model<WorkerDocument>,
   ) {}
 
-  async create(createWorkerDto: CreateWorkerDto): Promise<WorkerDocument> {
+  async create(createWorkerDto: CreateWorkerInputDto): Promise<WorkerDocument> {
     const worker = new this.workerModel({
       ...createWorkerDto,
       user_id: new Types.ObjectId(createWorkerDto.user_id),
       skills: createWorkerDto.skills?.map((s) => new Types.ObjectId(s)) || [],
+      available_from: createWorkerDto.available_from
+        ? new Date(createWorkerDto.available_from)
+        : undefined,
     });
     return worker.save();
   }
@@ -53,10 +57,20 @@ export class WorkersService {
 
   async update(
     id: string,
-    updateWorkerDto: UpdateWorkerDto,
+    updateWorkerDto: UpdateWorkerInputDto,
   ): Promise<WorkerDocument> {
+    const updateData: Record<string, unknown> = { ...updateWorkerDto };
+    if (updateWorkerDto.available_from) {
+      updateData['available_from'] = new Date(updateWorkerDto.available_from);
+    }
+    if (updateWorkerDto.skills) {
+      updateData['skills'] = updateWorkerDto.skills.map(
+        (s) => new Types.ObjectId(s),
+      );
+    }
+
     const worker = await this.workerModel
-      .findByIdAndUpdate(id, updateWorkerDto, { new: true })
+      .findByIdAndUpdate(id, updateData, { new: true })
       .populate('user_id')
       .populate('skills')
       .exec();

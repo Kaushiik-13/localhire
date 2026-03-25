@@ -6,41 +6,108 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { SkillsService } from './skills.service';
 import { CreateSkillDto } from './dto/create-skill.dto';
 import { UpdateSkillDto } from './dto/create-skill.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles_decorator } from '../../common/decorators/roles.decorator';
+import { Role } from '../../common/enums/roles.enum';
+import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+
+interface AuthenticatedRequest {
+  user: {
+    userId: string;
+    phone: string;
+    roles: string[];
+  };
+}
 
 @Controller('skills')
 export class SkillsController {
   constructor(private readonly skillsService: SkillsService) {}
 
   @Post()
-  create(@Body() createSkillDto: CreateSkillDto) {
-    return this.skillsService.create(createSkillDto);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a new skill (admin only)' })
+  @ApiResponse({
+    status: 201,
+    description: 'Skill created successfully',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Skill name already exists',
+  })
+  create(
+    @Body() createSkillDto: CreateSkillDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.skillsService.create(createSkillDto, req.user.userId);
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all skills' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all skills',
+  })
   findAll() {
     return this.skillsService.findAll();
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get skill by ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Skill details',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Skill not found',
+  })
   findOne(@Param('id') id: string) {
     return this.skillsService.findOne(id);
   }
 
-  @Get('category/:category')
-  findByCategory(@Param('category') category: string) {
-    return this.skillsService.findByCategory(category);
-  }
-
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update skill (admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Skill updated successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Skill not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Skill name already exists',
+  })
   update(@Param('id') id: string, @Body() updateSkillDto: UpdateSkillDto) {
     return this.skillsService.update(id, updateSkillDto);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete skill (admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Skill deleted successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Skill not found',
+  })
   remove(@Param('id') id: string) {
     return this.skillsService.remove(id);
   }

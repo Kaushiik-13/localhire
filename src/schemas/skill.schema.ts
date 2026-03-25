@@ -8,9 +8,6 @@ export class Skill {
   @Prop({ required: true, unique: true })
   skill_name: string;
 
-  @Prop({ enum: ['service', 'job'], required: true })
-  category: string;
-
   @Prop({ default: true })
   is_active: boolean;
 

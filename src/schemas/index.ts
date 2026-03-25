@@ -8,4 +8,4 @@ export * from './service-booking.schema';
 export * from './review.schema';
 export * from './notification.schema';
 export * from './skill.schema';
-export * from './category.schema';
+export * from './language.schema';

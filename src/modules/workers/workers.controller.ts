@@ -8,15 +8,15 @@ import {
   Delete,
 } from '@nestjs/common';
 import { WorkersService } from './workers.service';
-import { CreateWorkerDto } from './dto/create-worker.dto';
-import { UpdateWorkerDto } from './dto/update-worker.dto';
+import { CreateWorkerInputDto } from './dto/inputs/worker.input.dto';
+import { UpdateWorkerInputDto } from './dto/inputs/worker.input.dto';
 
 @Controller('workers')
 export class WorkersController {
   constructor(private readonly workersService: WorkersService) {}
 
   @Post()
-  create(@Body() createWorkerDto: CreateWorkerDto) {
+  create(@Body() createWorkerDto: CreateWorkerInputDto) {
     return this.workersService.create(createWorkerDto);
   }
 
@@ -36,7 +36,10 @@ export class WorkersController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateWorkerDto: UpdateWorkerDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateWorkerDto: UpdateWorkerInputDto,
+  ) {
     return this.workersService.update(id, updateWorkerDto);
   }
 

@@ -1,23 +1,19 @@
 import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
 
-export class CreateSkillDto {
+export class CreateLanguageDto {
   @IsString()
   @IsNotEmpty()
-  skill_name: string;
+  language_name: string;
 
   @IsBoolean()
   @IsOptional()
   is_active?: boolean;
-
-  @IsString()
-  @IsOptional()
-  created_by?: string;
 }
 
-export class UpdateSkillDto {
+export class UpdateLanguageDto {
   @IsString()
   @IsOptional()
-  skill_name?: string;
+  language_name?: string;
 
   @IsBoolean()
   @IsOptional()

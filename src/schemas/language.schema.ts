@@ -1,15 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
-export type CategoryDocument = Category & Document;
+export type LanguageDocument = Language & Document;
 
 @Schema({ timestamps: true })
-export class Category {
+export class Language {
   @Prop({ required: true, unique: true })
-  category_name: string;
-
-  @Prop({ required: true, unique: true })
-  slug: string;
+  language_name: string;
 
   @Prop({ default: true })
   is_active: boolean;
@@ -18,4 +15,4 @@ export class Category {
   created_by?: Types.ObjectId;
 }
 
-export const CategorySchema = SchemaFactory.createForClass(Category);
+export const LanguageSchema = SchemaFactory.createForClass(Language);

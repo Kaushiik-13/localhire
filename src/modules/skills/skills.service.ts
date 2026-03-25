@@ -15,7 +15,10 @@ export class SkillsService {
     @InjectModel(Skill.name) private skillModel: Model<SkillDocument>,
   ) {}
 
-  async create(createSkillDto: CreateSkillDto): Promise<SkillDocument> {
+  async create(
+    createSkillDto: CreateSkillDto,
+    createdBy?: string,
+  ): Promise<SkillDocument> {
     const existingSkill = await this.skillModel.findOne({
       skill_name: createSkillDto.skill_name,
     });
@@ -25,9 +28,7 @@ export class SkillsService {
 
     const skill = new this.skillModel({
       ...createSkillDto,
-      created_by: createSkillDto.created_by
-        ? new Types.ObjectId(createSkillDto.created_by)
-        : undefined,
+      created_by: createdBy ? new Types.ObjectId(createdBy) : undefined,
     });
     return skill.save();
   }
@@ -45,10 +46,6 @@ export class SkillsService {
       throw new NotFoundException('Skill not found');
     }
     return skill;
-  }
-
-  async findByCategory(category: string): Promise<SkillDocument[]> {
-    return this.skillModel.find({ category, is_active: true }).exec();
   }
 
   async update(
