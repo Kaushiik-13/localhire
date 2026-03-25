@@ -57,7 +57,7 @@ export class UsersController {
   @ApiOperation({ summary: 'User registration' })
   @ApiResponse({
     status: 201,
-    type: UserLoginOutputDto,
+    type: RegisterInputDto,
     description: 'User registered successfully',
   })
   @ApiResponse({

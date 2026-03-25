@@ -36,6 +36,30 @@ export class ServiceProvider {
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Skill' }], default: [] })
   skills: Types.ObjectId[];
+
+  @Prop({ type: String })
+  description?: string;
+
+  @Prop()
+  job_title?: string;
+
+  @Prop()
+  hourly_rate?: number;
+
+  @Prop()
+  available_from?: Date;
+
+  @Prop()
+  current_location?: string;
+
+  @Prop({ default: false })
+  willing_to_relocate: boolean;
+
+  @Prop()
+  resume_url?: string;
+
+  @Prop({ type: [String], default: [] })
+  languages: string[];
 }
 
 export const ServiceProviderSchema =

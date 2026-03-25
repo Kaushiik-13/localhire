@@ -37,6 +37,7 @@ export class LanguagesController {
   @ApiOperation({ summary: 'Create a new language (admin only)' })
   @ApiResponse({
     status: 201,
+    type: CreateLanguageDto,
     description: 'Language created successfully',
   })
   @ApiResponse({

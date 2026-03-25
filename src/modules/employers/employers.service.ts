@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Employer, EmployerDocument } from '../../schemas/employer.schema';
-import { CreateEmployerDto } from './dto/create-employer.dto';
-import { UpdateEmployerDto } from './dto/create-employer.dto';
+import { CreateEmployerInputDto } from './dto/inputs/employer.input.dto';
+import { UpdateEmployerInputDto } from './dto/inputs/employer.input.dto';
 
 @Injectable()
 export class EmployersService {
@@ -12,31 +12,23 @@ export class EmployersService {
   ) {}
 
   async create(
-    createEmployerDto: CreateEmployerDto,
+    createEmployerDto: CreateEmployerInputDto,
   ): Promise<EmployerDocument> {
     const employer = new this.employerModel({
       ...createEmployerDto,
       user_id: new Types.ObjectId(createEmployerDto.user_id),
-      category_id: createEmployerDto.category_id
-        ? new Types.ObjectId(createEmployerDto.category_id)
-        : undefined,
     });
     return employer.save();
   }
 
   async findAll(): Promise<EmployerDocument[]> {
-    return this.employerModel
-      .find()
-      .populate('user_id')
-      .populate('category_id')
-      .exec();
+    return this.employerModel.find().populate('user_id').exec();
   }
 
   async findOne(id: string): Promise<EmployerDocument> {
     const employer = await this.employerModel
       .findById(id)
       .populate('user_id')
-      .populate('category_id')
       .exec();
     if (!employer) {
       throw new NotFoundException('Employer not found');
@@ -48,18 +40,16 @@ export class EmployersService {
     return this.employerModel
       .findOne({ user_id: new Types.ObjectId(userId) })
       .populate('user_id')
-      .populate('category_id')
       .exec();
   }
 
   async update(
     id: string,
-    updateEmployerDto: UpdateEmployerDto,
+    updateEmployerDto: UpdateEmployerInputDto,
   ): Promise<EmployerDocument> {
     const employer = await this.employerModel
       .findByIdAndUpdate(id, updateEmployerDto, { new: true })
       .populate('user_id')
-      .populate('category_id')
       .exec();
     if (!employer) {
       throw new NotFoundException('Employer not found');

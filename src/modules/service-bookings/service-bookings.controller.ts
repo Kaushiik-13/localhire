@@ -10,6 +10,7 @@ import {
 import { ServiceBookingsService } from './service-bookings.service';
 import { CreateServiceBookingDto } from './dto/create-service-booking.dto';
 import { UpdateServiceBookingDto } from './dto/create-service-booking.dto';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('service-bookings')
 export class ServiceBookingsController {
@@ -18,6 +19,8 @@ export class ServiceBookingsController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a service booking' })
+  @ApiResponse({ status: 201, type: CreateServiceBookingDto })
   create(@Body() createServiceBookingDto: CreateServiceBookingDto) {
     return this.serviceBookingsService.create(createServiceBookingDto);
   }

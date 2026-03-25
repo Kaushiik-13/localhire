@@ -9,12 +9,15 @@ import {
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('notifications')
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a notification' })
+  @ApiResponse({ status: 201, type: CreateNotificationDto })
   create(@Body() createNotificationDto: CreateNotificationDto) {
     return this.notificationsService.create(createNotificationDto);
   }

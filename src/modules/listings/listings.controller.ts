@@ -10,12 +10,15 @@ import {
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/create-listing.dto';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('listings')
 export class ListingsController {
   constructor(private readonly listingsService: ListingsService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a listing' })
+  @ApiResponse({ status: 201, type: CreateListingDto })
   create(@Body() createListingDto: CreateListingDto) {
     return this.listingsService.create(createListingDto);
   }

@@ -8,8 +8,9 @@ import {
   Delete,
 } from '@nestjs/common';
 import { ServiceProvidersService } from './service-providers.service';
-import { CreateServiceProviderDto } from './dto/create-service-provider.dto';
-import { UpdateServiceProviderDto } from './dto/create-service-provider.dto';
+import { CreateServiceProviderInputDto } from './dto/inputs/service-provider.input.dto';
+import { UpdateServiceProviderInputDto } from './dto/inputs/service-provider.input.dto';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('service-providers')
 export class ServiceProvidersController {
@@ -18,7 +19,9 @@ export class ServiceProvidersController {
   ) {}
 
   @Post()
-  create(@Body() createServiceProviderDto: CreateServiceProviderDto) {
+  @ApiOperation({ summary: 'Create a service provider' })
+  @ApiResponse({ status: 201, type: CreateServiceProviderInputDto })
+  create(@Body() createServiceProviderDto: CreateServiceProviderInputDto) {
     return this.serviceProvidersService.create(createServiceProviderDto);
   }
 
@@ -40,7 +43,7 @@ export class ServiceProvidersController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() updateServiceProviderDto: UpdateServiceProviderDto,
+    @Body() updateServiceProviderDto: UpdateServiceProviderInputDto,
   ) {
     return this.serviceProvidersService.update(id, updateServiceProviderDto);
   }

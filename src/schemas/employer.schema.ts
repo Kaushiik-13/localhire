@@ -21,8 +21,14 @@ export class Employer {
   @Prop()
   logo_url?: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Category' })
-  category_id?: Types.ObjectId;
+  @Prop()
+  registration_number?: string;
+
+  @Prop()
+  established_year?: number;
+
+  @Prop()
+  operating_hours?: string;
 
   @Prop({ enum: ApprovalStatus, default: ApprovalStatus.PENDING })
   approval_status: ApprovalStatus;

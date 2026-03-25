@@ -8,15 +8,18 @@ import {
   Delete,
 } from '@nestjs/common';
 import { EmployersService } from './employers.service';
-import { CreateEmployerDto } from './dto/create-employer.dto';
-import { UpdateEmployerDto } from './dto/create-employer.dto';
+import { CreateEmployerInputDto } from './dto/inputs/employer.input.dto';
+import { UpdateEmployerInputDto } from './dto/inputs/employer.input.dto';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('employers')
 export class EmployersController {
   constructor(private readonly employersService: EmployersService) {}
 
   @Post()
-  create(@Body() createEmployerDto: CreateEmployerDto) {
+  @ApiOperation({ summary: 'Create an employer' })
+  @ApiResponse({ status: 201, type: CreateEmployerInputDto })
+  create(@Body() createEmployerDto: CreateEmployerInputDto) {
     return this.employersService.create(createEmployerDto);
   }
 
@@ -38,7 +41,7 @@ export class EmployersController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body() updateEmployerDto: UpdateEmployerDto,
+    @Body() updateEmployerDto: UpdateEmployerInputDto,
   ) {
     return this.employersService.update(id, updateEmployerDto);
   }

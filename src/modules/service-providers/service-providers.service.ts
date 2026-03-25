@@ -5,8 +5,8 @@ import {
   ServiceProvider,
   ServiceProviderDocument,
 } from '../../schemas/service-provider.schema';
-import { CreateServiceProviderDto } from './dto/create-service-provider.dto';
-import { UpdateServiceProviderDto } from './dto/create-service-provider.dto';
+import { CreateServiceProviderInputDto } from './dto/inputs/service-provider.input.dto';
+import { UpdateServiceProviderInputDto } from './dto/inputs/service-provider.input.dto';
 
 @Injectable()
 export class ServiceProvidersService {
@@ -16,7 +16,7 @@ export class ServiceProvidersService {
   ) {}
 
   async create(
-    createServiceProviderDto: CreateServiceProviderDto,
+    createServiceProviderDto: CreateServiceProviderInputDto,
   ): Promise<ServiceProviderDocument> {
     const serviceProvider = new this.serviceProviderModel({
       ...createServiceProviderDto,
@@ -24,6 +24,9 @@ export class ServiceProvidersService {
       skills:
         createServiceProviderDto.skills?.map((s) => new Types.ObjectId(s)) ||
         [],
+      available_from: createServiceProviderDto.available_from
+        ? new Date(createServiceProviderDto.available_from)
+        : undefined,
     });
     return serviceProvider.save();
   }
@@ -61,10 +64,22 @@ export class ServiceProvidersService {
 
   async update(
     id: string,
-    updateServiceProviderDto: UpdateServiceProviderDto,
+    updateServiceProviderDto: UpdateServiceProviderInputDto,
   ): Promise<ServiceProviderDocument> {
+    const updateData: Record<string, unknown> = { ...updateServiceProviderDto };
+    if (updateServiceProviderDto.available_from) {
+      updateData['available_from'] = new Date(
+        updateServiceProviderDto.available_from,
+      );
+    }
+    if (updateServiceProviderDto.skills) {
+      updateData['skills'] = updateServiceProviderDto.skills.map(
+        (s) => new Types.ObjectId(s),
+      );
+    }
+
     const serviceProvider = await this.serviceProviderModel
-      .findByIdAndUpdate(id, updateServiceProviderDto, { new: true })
+      .findByIdAndUpdate(id, updateData, { new: true })
       .populate('user_id')
       .populate('skills')
       .exec();

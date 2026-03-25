@@ -10,12 +10,15 @@ import {
 import { WorkersService } from './workers.service';
 import { CreateWorkerInputDto } from './dto/inputs/worker.input.dto';
 import { UpdateWorkerInputDto } from './dto/inputs/worker.input.dto';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('workers')
 export class WorkersController {
   constructor(private readonly workersService: WorkersService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a worker' })
+  @ApiResponse({ status: 201, type: CreateWorkerInputDto })
   create(@Body() createWorkerDto: CreateWorkerInputDto) {
     return this.workersService.create(createWorkerDto);
   }

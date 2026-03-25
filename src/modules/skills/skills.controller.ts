@@ -37,6 +37,7 @@ export class SkillsController {
   @ApiOperation({ summary: 'Create a new skill (admin only)' })
   @ApiResponse({
     status: 201,
+    type: CreateSkillDto,
     description: 'Skill created successfully',
   })
   @ApiResponse({

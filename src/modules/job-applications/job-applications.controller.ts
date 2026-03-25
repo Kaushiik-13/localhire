@@ -10,6 +10,7 @@ import {
 import { JobApplicationsService } from './job-applications.service';
 import { CreateJobApplicationDto } from './dto/create-job-application.dto';
 import { UpdateJobApplicationDto } from './dto/create-job-application.dto';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('job-applications')
 export class JobApplicationsController {
@@ -18,6 +19,8 @@ export class JobApplicationsController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a job application' })
+  @ApiResponse({ status: 201, type: CreateJobApplicationDto })
   create(@Body() createJobApplicationDto: CreateJobApplicationDto) {
     return this.jobApplicationsService.create(createJobApplicationDto);
   }
