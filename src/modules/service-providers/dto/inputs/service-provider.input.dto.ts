@@ -1,6 +1,5 @@
 import {
   IsString,
-  IsNotEmpty,
   IsOptional,
   IsEnum,
   IsNumber,
@@ -17,11 +16,6 @@ import {
 } from '../../../../common/enums/status.enum';
 
 export class CreateServiceProviderInputDto {
-  @ApiProperty({ example: '507f1f77bcf86cd799439011' })
-  @IsString()
-  @IsNotEmpty()
-  user_id: string;
-
   @ApiPropertyOptional({ example: 'Plumber' })
   @IsString()
   @IsOptional()

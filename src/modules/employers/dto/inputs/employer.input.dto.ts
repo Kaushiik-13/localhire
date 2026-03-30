@@ -9,11 +9,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ApprovalStatus } from '../../../../common/enums/approval.enum';
 
 export class CreateEmployerInputDto {
-  @ApiProperty({ example: '507f1f77bcf86cd799439011' })
-  @IsString()
-  @IsNotEmpty()
-  user_id: string;
-
   @ApiProperty({ example: 'ABC Plumbing Services' })
   @IsString()
   @IsNotEmpty()

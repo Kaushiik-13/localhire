@@ -6,21 +6,43 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { WorkersService } from './workers.service';
 import { CreateWorkerInputDto } from './dto/inputs/worker.input.dto';
 import { UpdateWorkerInputDto } from './dto/inputs/worker.input.dto';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles_decorator } from '../../common/decorators/roles.decorator';
+import { Role } from '../../common/enums/roles.enum';
+
+interface AuthenticatedRequest {
+  user: {
+    userId: string;
+    phone: string;
+    roles: Role[];
+  };
+}
 
 @Controller('workers')
 export class WorkersController {
   constructor(private readonly workersService: WorkersService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a worker' })
-  @ApiResponse({ status: 201, type: CreateWorkerInputDto })
-  create(@Body() createWorkerDto: CreateWorkerInputDto) {
-    return this.workersService.create(createWorkerDto);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.WORKER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a worker profile' })
+  @ApiResponse({ status: 201, description: 'Worker created successfully' })
+  @ApiResponse({ status: 400, description: 'User not found or not a worker' })
+  @ApiResponse({ status: 409, description: 'Worker profile already exists' })
+  create(
+    @Body() createWorkerDto: CreateWorkerInputDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.workersService.create(createWorkerDto, req.user.userId);
   }
 
   @Get()

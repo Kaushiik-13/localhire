@@ -6,11 +6,13 @@ import {
   ServiceProvider,
   ServiceProviderSchema,
 } from '../../schemas/service-provider.schema';
+import { User, UserSchema } from '../../schemas/user.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: ServiceProvider.name, schema: ServiceProviderSchema },
+      { name: User.name, schema: UserSchema },
     ]),
   ],
   controllers: [ServiceProvidersController],

@@ -1,26 +1,53 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
   ServiceProvider,
   ServiceProviderDocument,
 } from '../../schemas/service-provider.schema';
+import { User, UserDocument } from '../../schemas/user.schema';
 import { CreateServiceProviderInputDto } from './dto/inputs/service-provider.input.dto';
 import { UpdateServiceProviderInputDto } from './dto/inputs/service-provider.input.dto';
+import { Role } from '../../common/enums/roles.enum';
 
 @Injectable()
 export class ServiceProvidersService {
   constructor(
     @InjectModel(ServiceProvider.name)
     private serviceProviderModel: Model<ServiceProviderDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
   async create(
     createServiceProviderDto: CreateServiceProviderInputDto,
+    userId: string,
   ): Promise<ServiceProviderDocument> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.roles.includes(Role.SERVICE_PROVIDER)) {
+      throw new BadRequestException('User does not have service_provider role');
+    }
+
+    const existingProvider = await this.serviceProviderModel.findOne({
+      user_id: userId,
+    });
+    if (existingProvider) {
+      throw new ConflictException(
+        'Service provider profile already exists for this user',
+      );
+    }
+
     const serviceProvider = new this.serviceProviderModel({
       ...createServiceProviderDto,
-      user_id: new Types.ObjectId(createServiceProviderDto.user_id),
+      user_id: new Types.ObjectId(userId),
       skills:
         createServiceProviderDto.skills?.map((s) => new Types.ObjectId(s)) ||
         [],

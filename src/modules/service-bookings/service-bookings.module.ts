@@ -6,11 +6,13 @@ import {
   ServiceBooking,
   ServiceBookingSchema,
 } from '../../schemas/service-booking.schema';
+import { Listing, ListingSchema } from '../../schemas/listing.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: ServiceBooking.name, schema: ServiceBookingSchema },
+      { name: Listing.name, schema: ListingSchema },
     ]),
   ],
   controllers: [ServiceBookingsController],

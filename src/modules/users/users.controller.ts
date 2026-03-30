@@ -21,9 +21,9 @@ import { UsersService } from './users.service';
 import { RegisterInputDto } from './dto/inputs/register.input.dto';
 import { LoginInputDto } from './dto/inputs/login.input.dto';
 import {
-  ForgotPasswordInputDto,
-  VerifyOtpInputDto,
-  ResetPasswordInputDto,
+  UserForgotPasswordInputDto,
+  UserVerifyOtpInputDto,
+  UserResetPasswordInputDto,
 } from './dto/inputs/forgot-password.input.dto';
 import { UpdateProfileInputDto } from './dto/inputs/update-profile.input.dto';
 import {
@@ -33,7 +33,7 @@ import {
 import { UserOutputDto } from './dto/outputs/user.output.dto';
 import { UserLoginOutputDto } from './dto/outputs/user-login.output.dto';
 import { UserListOutputDto } from './dto/outputs/user-list.output.dto';
-import { MessageOutputDto } from './dto/outputs/message.output.dto';
+import { UserMessageOutputDto } from './dto/outputs/message.output.dto';
 import { VerifyOtpOutputDto } from './dto/outputs/verify-otp.output.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -62,7 +62,7 @@ export class UsersController {
   })
   @ApiResponse({
     status: 409,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'Phone already registered',
   })
   async register(@Body() input: RegisterInputDto) {
@@ -79,7 +79,7 @@ export class UsersController {
   })
   @ApiResponse({
     status: 401,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'Invalid credentials',
   })
   async login(@Body() input: LoginInputDto) {
@@ -91,10 +91,10 @@ export class UsersController {
   @ApiOperation({ summary: 'Request password reset OTP' })
   @ApiResponse({
     status: 200,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'OTP sent if email exists',
   })
-  async forgotPassword(@Body() input: ForgotPasswordInputDto) {
+  async forgotPassword(@Body() input: UserForgotPasswordInputDto) {
     return this.usersService.forgotPassword(input.email);
   }
 
@@ -108,10 +108,10 @@ export class UsersController {
   })
   @ApiResponse({
     status: 400,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'Invalid or expired OTP',
   })
-  verifyOtp(@Body() input: VerifyOtpInputDto) {
+  verifyOtp(@Body() input: UserVerifyOtpInputDto) {
     return this.usersService.verifyOtp(input.email, input.otp);
   }
 
@@ -120,15 +120,15 @@ export class UsersController {
   @ApiOperation({ summary: 'Reset password using OTP' })
   @ApiResponse({
     status: 200,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'Password reset successful',
   })
   @ApiResponse({
     status: 400,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'Invalid or expired OTP',
   })
-  async resetPassword(@Body() input: ResetPasswordInputDto) {
+  async resetPassword(@Body() input: UserResetPasswordInputDto) {
     return this.usersService.resetPassword(
       input.email,
       input.otp,
@@ -172,12 +172,12 @@ export class UsersController {
   @ApiOperation({ summary: 'Create user (admin only)' })
   @ApiResponse({
     status: 201,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'User created',
   })
   @ApiResponse({
     status: 409,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'Phone already registered',
   })
   async createUser(
@@ -213,7 +213,7 @@ export class UsersController {
   })
   @ApiResponse({
     status: 404,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'User not found',
   })
   async findById(@Param('id') id: string) {
@@ -227,12 +227,12 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user (admin only)' })
   @ApiResponse({
     status: 200,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'User updated',
   })
   @ApiResponse({
     status: 404,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'User not found',
   })
   async updateUser(
@@ -251,12 +251,12 @@ export class UsersController {
   @ApiOperation({ summary: 'Delete user (admin only)' })
   @ApiResponse({
     status: 200,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'User deleted',
   })
   @ApiResponse({
     status: 404,
-    type: MessageOutputDto,
+    type: UserMessageOutputDto,
     description: 'User not found',
   })
   async deleteUser(

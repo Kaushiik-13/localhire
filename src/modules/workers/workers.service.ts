@@ -1,21 +1,48 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Worker, WorkerDocument } from '../../schemas/worker.schema';
+import { User, UserDocument } from '../../schemas/user.schema';
 import { CreateWorkerInputDto } from './dto/inputs/worker.input.dto';
 import { UpdateWorkerInputDto } from './dto/inputs/worker.input.dto';
 import { WorkerOutputDto } from './dto/outputs/worker.output.dto';
+import { Role } from '../../common/enums/roles.enum';
 
 @Injectable()
 export class WorkersService {
   constructor(
     @InjectModel(Worker.name) private workerModel: Model<WorkerDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
-  async create(createWorkerDto: CreateWorkerInputDto): Promise<WorkerDocument> {
+  async create(
+    createWorkerDto: CreateWorkerInputDto,
+    userId: string,
+  ): Promise<WorkerDocument> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.roles.includes(Role.WORKER)) {
+      throw new BadRequestException('User does not have worker role');
+    }
+
+    const existingWorker = await this.workerModel.findOne({ user_id: userId });
+    if (existingWorker) {
+      throw new ConflictException(
+        'Worker profile already exists for this user',
+      );
+    }
+
     const worker = new this.workerModel({
       ...createWorkerDto,
-      user_id: new Types.ObjectId(createWorkerDto.user_id),
+      user_id: new Types.ObjectId(userId),
       skills: createWorkerDto.skills?.map((s) => new Types.ObjectId(s)) || [],
       available_from: createWorkerDto.available_from
         ? new Date(createWorkerDto.available_from)

@@ -1,9 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Listing, ListingDocument } from '../../schemas/listing.schema';
-import { CreateListingDto } from './dto/create-listing.dto';
-import { UpdateListingDto } from './dto/create-listing.dto';
+import { CreateListingInputDto } from './dto/inputs/listing.input.dto';
+import { UpdateListingInputDto } from './dto/inputs/listing.input.dto';
+import { ApprovalStatus } from '../../common/enums/approval.enum';
+import { ListingStatus } from '../../common/enums/status.enum';
 
 @Injectable()
 export class ListingsService {
@@ -11,13 +17,12 @@ export class ListingsService {
     @InjectModel(Listing.name) private listingModel: Model<ListingDocument>,
   ) {}
 
-  async create(createListingDto: CreateListingDto): Promise<ListingDocument> {
+  async create(
+    createListingDto: CreateListingInputDto,
+  ): Promise<ListingDocument> {
     const listing = new this.listingModel({
       ...createListingDto,
       created_by: new Types.ObjectId(createListingDto.created_by),
-      category_id: createListingDto.category_id
-        ? new Types.ObjectId(createListingDto.category_id)
-        : undefined,
       job_details: createListingDto.job_details
         ? {
             ...createListingDto.job_details,
@@ -35,7 +40,6 @@ export class ListingsService {
     return this.listingModel
       .find()
       .populate('created_by')
-      .populate('category_id')
       .populate('job_details.required_skills')
       .exec();
   }
@@ -44,7 +48,6 @@ export class ListingsService {
     const listing = await this.listingModel
       .findById(id)
       .populate('created_by')
-      .populate('category_id')
       .populate('job_details.required_skills')
       .exec();
     if (!listing) {
@@ -53,41 +56,88 @@ export class ListingsService {
     return listing;
   }
 
-  async findByCategory(categoryId: string): Promise<ListingDocument[]> {
-    return this.listingModel
-      .find({ category_id: new Types.ObjectId(categoryId) })
-      .populate('created_by')
-      .populate('category_id')
-      .exec();
-  }
-
   async findByType(listingType: string): Promise<ListingDocument[]> {
     return this.listingModel
       .find({ listing_type: listingType })
       .populate('created_by')
-      .populate('category_id')
       .exec();
   }
 
   async update(
     id: string,
-    updateListingDto: UpdateListingDto,
+    updateListingDto: UpdateListingInputDto,
+    userId: string,
   ): Promise<ListingDocument> {
-    const listing = await this.listingModel
-      .findByIdAndUpdate(id, updateListingDto, { new: true })
-      .populate('created_by')
-      .populate('category_id')
-      .exec();
+    const listing = await this.listingModel.findById(id);
     if (!listing) {
       throw new NotFoundException('Listing not found');
     }
-    return listing;
-  }
-
-  async remove(id: string): Promise<void> {
-    const result = await this.listingModel.findByIdAndDelete(id).exec();
-    if (!result) {
+    if (listing.created_by.toString() !== userId) {
+      throw new ForbiddenException('You can only update your own listings');
+    }
+    const updated = await this.listingModel
+      .findByIdAndUpdate(id, updateListingDto, { new: true })
+      .populate('created_by')
+      .exec();
+    if (!updated) {
       throw new NotFoundException('Listing not found');
     }
+    return updated;
+  }
+
+  async remove(id: string, userId: string): Promise<void> {
+    const listing = await this.listingModel.findById(id);
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+    if (listing.created_by.toString() !== userId) {
+      throw new ForbiddenException('You can only delete your own listings');
+    }
+    await this.listingModel.findByIdAndDelete(id).exec();
+  }
+
+  async findByApprovalStatus(
+    approvalStatus: ApprovalStatus,
+  ): Promise<ListingDocument[]> {
+    return this.listingModel
+      .find({ approval_status: approvalStatus })
+      .populate('created_by')
+      .populate('job_details.required_skills')
+      .exec();
+  }
+
+  async approveListing(id: string, adminId: string): Promise<ListingDocument> {
+    const listing = await this.listingModel.findById(id);
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    if (listing.approval_status === ApprovalStatus.APPROVED) {
+      throw new ForbiddenException('Listing is already approved');
+    }
+
+    listing.approval_status = ApprovalStatus.APPROVED;
+    listing.approved_by = new Types.ObjectId(adminId);
+    listing.approved_at = new Date();
+    listing.status = ListingStatus.ACTIVE;
+
+    return listing.save();
+  }
+
+  async rejectListing(id: string, adminId: string): Promise<ListingDocument> {
+    const listing = await this.listingModel.findById(id);
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    if (listing.approval_status === ApprovalStatus.REJECTED) {
+      throw new ForbiddenException('Listing is already rejected');
+    }
+
+    listing.approval_status = ApprovalStatus.REJECTED;
+    listing.approved_by = new Types.ObjectId(adminId);
+    listing.approved_at = new Date();
+
+    return listing.save();
   }
 }

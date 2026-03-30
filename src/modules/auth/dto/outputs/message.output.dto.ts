@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class MessageOutputDto {
+export class AuthMessageOutputDto {
   @ApiProperty({ example: 'Admin created successfully' })
   message: string;
 }

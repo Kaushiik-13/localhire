@@ -6,11 +6,13 @@ import {
   JobApplication,
   JobApplicationSchema,
 } from '../../schemas/job-application.schema';
+import { Listing, ListingSchema } from '../../schemas/listing.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: JobApplication.name, schema: JobApplicationSchema },
+      { name: Listing.name, schema: ListingSchema },
     ]),
   ],
   controllers: [JobApplicationsController],

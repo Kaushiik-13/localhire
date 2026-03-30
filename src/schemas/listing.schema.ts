@@ -37,6 +37,12 @@ export class JobDetails {
   @Prop({ enum: WorkerAvailability })
   job_type?: WorkerAvailability;
 
+  @Prop()
+  start_date?: Date;
+
+  @Prop()
+  end_date?: Date;
+
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Skill' }], default: [] })
   required_skills: Types.ObjectId[];
 }
@@ -66,9 +72,6 @@ export class Listing {
 
   @Prop({ enum: ['job', 'service'], required: true })
   listing_type: string;
-
-  @Prop({ type: Types.ObjectId, ref: 'Category' })
-  category_id?: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   created_by: Types.ObjectId;

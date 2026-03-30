@@ -22,14 +22,14 @@ import { CreateAdminInputDto } from './dto/inputs/admin.input.dto';
 import { UpdateAdminInputDto } from './dto/inputs/admin.input.dto';
 import { LoginInputDto } from './dto/inputs/login.input.dto';
 import {
-  ForgotPasswordInputDto,
-  VerifyOtpInputDto,
-  ResetPasswordInputDto,
+  AuthForgotPasswordInputDto,
+  AuthVerifyOtpInputDto,
+  AuthResetPasswordInputDto,
 } from './dto/inputs/forgot-password.input.dto';
 import { AdminOutputDto } from './dto/outputs/admin.output.dto';
 import { AdminLoginOutputDto } from './dto/outputs/admin-login.output.dto';
 import { AdminListOutputDto } from './dto/outputs/admin-list.output.dto';
-import { MessageOutputDto } from './dto/outputs/message.output.dto';
+import { AuthMessageOutputDto } from './dto/outputs/message.output.dto';
 import { VerifyOtpOutputDto } from './dto/outputs/verify-otp.output.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -58,7 +58,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 403,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Admin already exists',
   })
   async createFirstAdmin(@Body() input: CreateAdminInputDto) {
@@ -70,10 +70,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Request password reset OTP via email' })
   @ApiResponse({
     status: 200,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'OTP sent if email exists',
   })
-  async forgotPassword(@Body() input: ForgotPasswordInputDto) {
+  async forgotPassword(@Body() input: AuthForgotPasswordInputDto) {
     return this.authService.forgotPassword(input.email);
   }
 
@@ -87,10 +87,10 @@ export class AuthController {
   })
   @ApiResponse({
     status: 400,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Invalid or expired OTP',
   })
-  verifyOtp(@Body() input: VerifyOtpInputDto) {
+  verifyOtp(@Body() input: AuthVerifyOtpInputDto) {
     return this.authService.verifyOtp(input.email, input.otp);
   }
 
@@ -99,15 +99,15 @@ export class AuthController {
   @ApiOperation({ summary: 'Reset password using OTP' })
   @ApiResponse({
     status: 200,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Password reset successful',
   })
   @ApiResponse({
     status: 400,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Invalid or expired OTP',
   })
-  async resetPassword(@Body() input: ResetPasswordInputDto) {
+  async resetPassword(@Body() input: AuthResetPasswordInputDto) {
     return this.authService.resetPassword(
       input.email,
       input.otp,
@@ -125,7 +125,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 401,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Invalid credentials',
   })
   async adminLogin(@Body() input: LoginInputDto) {
@@ -139,12 +139,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Create a new admin (admin only)' })
   @ApiResponse({
     status: 201,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Admin created',
   })
   @ApiResponse({
     status: 409,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Phone already registered',
   })
   async createAdmin(
@@ -180,7 +180,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 404,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Admin not found',
   })
   async getAdminById(@Param('id') id: string) {
@@ -194,17 +194,17 @@ export class AuthController {
   @ApiOperation({ summary: 'Update admin (admin only)' })
   @ApiResponse({
     status: 200,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Admin updated',
   })
   @ApiResponse({
     status: 404,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Admin not found',
   })
   @ApiResponse({
     status: 403,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Cannot update own account',
   })
   async updateAdmin(
@@ -223,17 +223,17 @@ export class AuthController {
   @ApiOperation({ summary: 'Delete admin (admin only)' })
   @ApiResponse({
     status: 200,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Admin deleted',
   })
   @ApiResponse({
     status: 404,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Admin not found',
   })
   @ApiResponse({
     status: 403,
-    type: MessageOutputDto,
+    type: AuthMessageOutputDto,
     description: 'Cannot delete own account or last admin',
   })
   async deleteAdmin(
