@@ -10,7 +10,6 @@ import { Worker, WorkerDocument } from '../../schemas/worker.schema';
 import { User, UserDocument } from '../../schemas/user.schema';
 import { CreateWorkerInputDto } from './dto/inputs/worker.input.dto';
 import { UpdateWorkerInputDto } from './dto/inputs/worker.input.dto';
-import { WorkerOutputDto } from './dto/outputs/worker.output.dto';
 import { Role } from '../../common/enums/roles.enum';
 
 @Injectable()

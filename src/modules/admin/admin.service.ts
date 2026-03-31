@@ -42,6 +42,52 @@ export interface TrendData {
   jobApplications: number;
 }
 
+interface TrendResult {
+  _id: string;
+  count: number;
+}
+
+interface SkillAggregateResult {
+  _id: Types.ObjectId | string;
+  count: number;
+}
+
+interface PopulatedListing {
+  _id: Types.ObjectId;
+  title: string;
+  listing_type: string;
+  status: string;
+  approval_status: string;
+  created_by: { name: string } | null;
+  createdAt: Date;
+}
+
+interface PopulatedUser {
+  _id: Types.ObjectId;
+  name: string;
+  phone: string;
+  email: string | null;
+  roles: string[];
+  approval_status: string;
+  createdAt: Date;
+}
+
+interface PopulatedWorker {
+  _id: Types.ObjectId;
+  experience_years: number;
+  expected_salary: number | null;
+  rating: number;
+  completed_jobs: number;
+  approval_status: string;
+  user_id: { name: string } | null;
+  createdAt: Date;
+}
+
+interface ListingAggregateResult {
+  _id: Types.ObjectId;
+  count: number;
+}
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -363,7 +409,7 @@ export class AdminService {
   private async getUserTrends(
     startDate: Date,
   ): Promise<Record<string, number>> {
-    const users = await this.userModel.aggregate([
+    const users = await this.userModel.aggregate<TrendResult>([
       { $match: { createdAt: { $gte: startDate } } },
       {
         $group: {
@@ -372,7 +418,7 @@ export class AdminService {
         },
       },
     ]);
-    return users.reduce(
+    return users.reduce<Record<string, number>>(
       (acc, curr) => {
         acc[curr._id] = curr.count;
         return acc;
@@ -384,7 +430,7 @@ export class AdminService {
   private async getListingTrends(
     startDate: Date,
   ): Promise<Record<string, number>> {
-    const listings = await this.listingModel.aggregate([
+    const listings = await this.listingModel.aggregate<TrendResult>([
       { $match: { createdAt: { $gte: startDate } } },
       {
         $group: {
@@ -393,7 +439,7 @@ export class AdminService {
         },
       },
     ]);
-    return listings.reduce(
+    return listings.reduce<Record<string, number>>(
       (acc, curr) => {
         acc[curr._id] = curr.count;
         return acc;
@@ -405,7 +451,7 @@ export class AdminService {
   private async getApplicationTrends(
     startDate: Date,
   ): Promise<Record<string, number>> {
-    const applications = await this.jobApplicationModel.aggregate([
+    const applications = await this.jobApplicationModel.aggregate<TrendResult>([
       { $match: { createdAt: { $gte: startDate } } },
       {
         $group: {
@@ -414,7 +460,7 @@ export class AdminService {
         },
       },
     ]);
-    return applications.reduce(
+    return applications.reduce<Record<string, number>>(
       (acc, curr) => {
         acc[curr._id] = curr.count;
         return acc;
@@ -466,7 +512,7 @@ export class AdminService {
   }
 
   async getListingsBySkills(): Promise<AdminListResponse<any>> {
-    const data = await this.listingModel.aggregate([
+    const data = await this.listingModel.aggregate<SkillAggregateResult>([
       { $match: { listing_type: 'job' } },
       { $unwind: '$job_details' },
       { $unwind: '$job_details.required_skills' },
@@ -475,7 +521,14 @@ export class AdminService {
       { $limit: 20 },
     ]);
 
-    const skillIds = data.map((d) => d._id).filter(Boolean);
+    const skillIds = data
+      .map((d) => d._id)
+      .filter((id): id is Types.ObjectId => {
+        if (id instanceof Types.ObjectId) return true;
+        if (typeof id === 'string' && Types.ObjectId.isValid(id)) return true;
+        return false;
+      });
+
     const skills = await this.skillModel
       .find({ _id: { $in: skillIds } })
       .exec();
@@ -483,10 +536,13 @@ export class AdminService {
       skills.map((s) => [s._id.toString(), s.skill_name]),
     );
 
-    const enrichedData = data.map((d) => ({
-      _id: skillMap.get(d._id?.toString()) || d._id,
-      count: d.count,
-    }));
+    const enrichedData = data.map((d) => {
+      const idStr = String(d._id);
+      return {
+        _id: skillMap.get(idStr) || idStr,
+        count: d.count,
+      };
+    });
 
     return { count: enrichedData.length, data: enrichedData };
   }
@@ -549,22 +605,25 @@ export class AdminService {
     limit: number = 10,
   ): Promise<AdminListResponse<any>> {
     const [jobApplications, serviceBookings] = await Promise.all([
-      this.jobApplicationModel.aggregate([
+      this.jobApplicationModel.aggregate<ListingAggregateResult>([
         { $group: { _id: '$listing_id', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: limit },
       ]),
-      this.serviceBookingModel.aggregate([
+      this.serviceBookingModel.aggregate<ListingAggregateResult>([
         { $group: { _id: '$listing_id', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: limit },
       ]),
     ]);
 
-    const listingIds = [
-      ...jobApplications.map((j) => j._id),
-      ...serviceBookings.map((s) => s._id),
-    ];
+    const listingIds: Types.ObjectId[] = [];
+    for (const j of jobApplications) {
+      if (j._id) listingIds.push(j._id);
+    }
+    for (const s of serviceBookings) {
+      if (s._id) listingIds.push(s._id);
+    }
 
     const uniqueIds = [...new Set(listingIds.map((id) => id.toString()))];
 
@@ -574,14 +633,19 @@ export class AdminService {
       .exec();
 
     const enrichedData = data.map((listing) => {
+      const listingIdStr = listing._id.toString();
       const jobApp = jobApplications.find(
-        (j) => j._id?.toString() === listing._id.toString(),
+        (j) => j._id && j._id.toString() === listingIdStr,
       );
       const serviceApp = serviceBookings.find(
-        (s) => s._id?.toString() === listing._id.toString(),
+        (s) => s._id && s._id.toString() === listingIdStr,
       );
+      const listingObj = listing.toObject() as unknown as Record<
+        string,
+        unknown
+      >;
       return {
-        ...listing.toObject(),
+        ...listingObj,
         applicationCount: (jobApp?.count || 0) + (serviceApp?.count || 0),
       };
     });
@@ -595,7 +659,7 @@ export class AdminService {
 
   async exportListingsCsv(): Promise<string> {
     const listings = await this.listingModel
-      .find()
+      .find<PopulatedListing>()
       .populate('created_by')
       .exec();
 
@@ -616,8 +680,8 @@ export class AdminService {
         l.listing_type,
         l.status,
         l.approval_status,
-        (l as any).created_by?.name || '',
-        (l as any).createdAt?.toISOString() || '',
+        l.created_by?.name || '',
+        l.createdAt?.toISOString() || '',
       ].join(','),
     );
 
@@ -625,7 +689,7 @@ export class AdminService {
   }
 
   async exportUsersCsv(): Promise<string> {
-    const users = await this.userModel.find().exec();
+    const users = await this.userModel.find<PopulatedUser>().exec();
 
     const headers = [
       'ID',
@@ -645,7 +709,7 @@ export class AdminService {
         u.email || '',
         u.roles.join(';'),
         u.approval_status,
-        (u as any).createdAt?.toISOString() || '',
+        u.createdAt?.toISOString() || '',
       ].join(','),
     );
 
@@ -653,7 +717,10 @@ export class AdminService {
   }
 
   async exportWorkersCsv(): Promise<string> {
-    const workers = await this.workerModel.find().populate('user_id').exec();
+    const workers = await this.workerModel
+      .find<PopulatedWorker>()
+      .populate('user_id')
+      .exec();
 
     const headers = [
       'ID',
@@ -669,13 +736,13 @@ export class AdminService {
     const rows = workers.map((w) =>
       [
         w._id,
-        `"${(w as any).user_id?.name || ''}"`,
+        `"${w.user_id?.name || ''}"`,
         w.experience_years,
         w.expected_salary || '',
         w.rating,
         w.completed_jobs,
         w.approval_status,
-        (w as any).createdAt?.toISOString() || '',
+        w.createdAt?.toISOString() || '',
       ].join(','),
     );
 
