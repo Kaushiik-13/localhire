@@ -56,21 +56,25 @@ jobs:
           MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
           MONGO_DB: ${{ secrets.MONGO_DB }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          RESEND_API_KEY: ${{secrets.RESEND_API_KEY}}
-          SMTP_FROM_EMAIL: ${{secrets.SMTP_FROM_EMAIL}}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          SMTP_FROM_EMAIL: ${{ secrets.SMTP_FROM_EMAIL }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           envs: MONGO_USER,MONGO_PASSWORD,MONGO_DB,JWT_SECRET,RESEND_API_KEY,SMTP_FROM_EMAIL
           script: |
-            cd localhire
+            if [ ! -d "$HOME/localhire" ]; then
+              echo "Directory not found. Cloning repository..."
+              git clone https://github.com/Kaushiik-13/localhire.git ~/localhire
+            fi
+            cd ~/localhire
             git pull origin master
             echo "MONGO_USER=$MONGO_USER" > .env
             echo "MONGO_PASSWORD=$MONGO_PASSWORD" >> .env
             echo "MONGO_DB=$MONGO_DB" >> .env
             echo "JWT_SECRET=$JWT_SECRET" >> .env
-            echo "RESEND_API_KEY=$RESEND_API_KEY">> .env
-            echo "SMTP_FROM_EMAIL=$SMTP_FROM_EMAIL">> .env
+            echo "RESEND_API_KEY=$RESEND_API_KEY" >> .env
+            echo "SMTP_FROM_EMAIL=$SMTP_FROM_EMAIL" >> .env
             docker compose up -d --build
             docker image prune -f
