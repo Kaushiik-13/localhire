@@ -32,7 +32,7 @@
 $ npm install
 ```
 
-## Compile and run the projects
+## Compile and run the project
 
 ```bash
 # development
