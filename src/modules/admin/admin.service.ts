@@ -19,6 +19,7 @@ import {
 } from '../../schemas/service-booking.schema';
 import { Skill, SkillDocument } from '../../schemas/skill.schema';
 import { ApprovalStatus } from '../../common/enums/approval.enum';
+import { DocumentVerificationStatus } from '../../common/enums/status.enum';
 
 export interface AdminListResponse<T> {
   count: number;
@@ -115,6 +116,17 @@ export class AdminService {
     const obj = user.toObject() as Record<string, unknown>;
     const approvedBy = obj.approved_by as Record<string, unknown> | undefined;
 
+    const identityDocs = (
+      (obj.identity_docs as Record<string, unknown>[]) || []
+    ).map((doc: Record<string, unknown>) => ({
+      document_type: doc.document_type,
+      document_number: doc.document_number,
+      document_url: doc.document_url,
+      verification_status: doc.verification_status,
+      verified_by: doc.verified_by,
+      verified_at: doc.verified_at,
+    }));
+
     return {
       _id: obj._id,
       name: obj.name,
@@ -132,7 +144,7 @@ export class AdminService {
           }
         : null,
       approved_at: obj.approved_at,
-      identity_docs: obj.identity_docs,
+      identity_docs: identityDocs,
     };
   }
 
@@ -153,6 +165,18 @@ export class AdminService {
   }
 
   async approveUser(id: string, adminId: string): Promise<UserDocument> {
+    const existingUser = await this.userModel.findById(id).exec();
+    if (!existingUser) throw new NotFoundException('User not found');
+
+    const updatedIdentityDocs = existingUser.identity_docs.map((doc) => ({
+      document_type: doc.document_type,
+      document_number: doc.document_number,
+      document_url: doc.document_url,
+      verification_status: DocumentVerificationStatus.APPROVED,
+      verified_by: new Types.ObjectId(adminId),
+      verified_at: new Date(),
+    }));
+
     const user = await this.userModel
       .findByIdAndUpdate(
         id,
@@ -160,6 +184,7 @@ export class AdminService {
           approval_status: ApprovalStatus.APPROVED,
           approved_by: new Types.ObjectId(adminId),
           approved_at: new Date(),
+          identity_docs: updatedIdentityDocs,
         },
         { new: true },
       )
@@ -167,11 +192,22 @@ export class AdminService {
       .exec();
 
     if (!user) throw new NotFoundException('User not found');
-
     return this.mapUserResponse(user) as unknown as UserDocument;
   }
 
   async rejectUser(id: string, adminId: string): Promise<UserDocument> {
+    const existingUser = await this.userModel.findById(id).exec();
+    if (!existingUser) throw new NotFoundException('User not found');
+
+    const updatedIdentityDocs = existingUser.identity_docs.map((doc) => ({
+      document_type: doc.document_type,
+      document_number: doc.document_number,
+      document_url: doc.document_url,
+      verification_status: DocumentVerificationStatus.REJECTED,
+      verified_by: new Types.ObjectId(adminId),
+      verified_at: new Date(),
+    }));
+
     const user = await this.userModel
       .findByIdAndUpdate(
         id,
@@ -179,6 +215,7 @@ export class AdminService {
           approval_status: ApprovalStatus.REJECTED,
           approved_by: new Types.ObjectId(adminId),
           approved_at: new Date(),
+          identity_docs: updatedIdentityDocs,
         },
         { new: true },
       )
@@ -186,7 +223,6 @@ export class AdminService {
       .exec();
 
     if (!user) throw new NotFoundException('User not found');
-
     return this.mapUserResponse(user) as unknown as UserDocument;
   }
 
