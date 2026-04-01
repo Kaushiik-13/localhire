@@ -164,6 +164,7 @@ export class AdminService {
       .find({ approval_status: status })
       .populate('user_id')
       .populate('approved_by')
+      .populate('skills')
       .exec();
     return { count: data.length, data };
   }
