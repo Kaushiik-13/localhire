@@ -111,14 +111,45 @@ export class AdminService {
 
   // ============ APPROVAL METHODS ============
 
+  private mapUserResponse(user: UserDocument): Record<string, unknown> {
+    const obj = user.toObject() as Record<string, unknown>;
+    const approvedBy = obj.approved_by as Record<string, unknown> | undefined;
+
+    return {
+      _id: obj._id,
+      name: obj.name,
+      phone: obj.phone,
+      email: obj.email,
+      roles: obj.roles,
+      approval_status: obj.approval_status,
+      approved_by: approvedBy
+        ? {
+            _id: approvedBy._id,
+            name: approvedBy.name,
+            phone: approvedBy.phone,
+            email: approvedBy.email,
+            roles: approvedBy.roles,
+          }
+        : null,
+      approved_at: obj.approved_at,
+      identity_docs: obj.identity_docs,
+    };
+  }
+
   async findUsersByStatus(
     status: ApprovalStatus,
   ): Promise<AdminListResponse<UserDocument>> {
     const data = await this.userModel
-      .find({ approval_status: status })
+      .find({ approval_status: status, roles: { $ne: 'admin' } })
       .populate('approved_by')
       .exec();
-    return { count: data.length, data };
+
+    const mappedData = data.map((user) => this.mapUserResponse(user));
+
+    return {
+      count: mappedData.length,
+      data: mappedData as unknown as UserDocument[],
+    };
   }
 
   async approveUser(id: string, adminId: string): Promise<UserDocument> {
@@ -136,7 +167,8 @@ export class AdminService {
       .exec();
 
     if (!user) throw new NotFoundException('User not found');
-    return user;
+
+    return this.mapUserResponse(user) as unknown as UserDocument;
   }
 
   async rejectUser(id: string, adminId: string): Promise<UserDocument> {
@@ -154,7 +186,8 @@ export class AdminService {
       .exec();
 
     if (!user) throw new NotFoundException('User not found');
-    return user;
+
+    return this.mapUserResponse(user) as unknown as UserDocument;
   }
 
   async findWorkersByStatus(
