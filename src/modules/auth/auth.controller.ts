@@ -134,6 +134,17 @@ export class AuthController {
     return this.authService.adminLogin(input.phone, input.password);
   }
 
+  @Get('admin-roles')
+  @ApiOperation({ summary: 'Get all admin roles' })
+  @ApiResponse({
+    status: 200,
+    type: AdminListOutputDto,
+    description: 'List of all admin roles',
+  })
+  async getAllAdminRoles() {
+    return this.authService.getAllAdmins();
+  }
+
   @Post('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles_decorator(Role.ADMIN)
