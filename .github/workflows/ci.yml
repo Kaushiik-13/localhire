@@ -61,6 +61,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: deployment-package
+          path: ${{ github.workspace }}
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
@@ -78,13 +79,24 @@ jobs:
           command_timeout: 30m
           envs: MONGO_USER,MONGO_PASSWORD,MONGO_DB,JWT_SECRET,RESEND_API_KEY,SMTP_FROM_EMAIL
           script: |
+            # Find and download artifact
+            ARTIFACT=$(find . -name "deployment.tar.gz" -type f | head -1)
+            if [ -z "$ARTIFACT" ]; then
+              echo "ERROR: deployment.tar.gz not found"
+              ls -la
+              exit 1
+            fi
+            echo "Found artifact: $ARTIFACT"
+
             # Clean up old deployment
             rm -rf ~/localhire-deploy
 
             # Extract new deployment
             mkdir -p ~/localhire-deploy
-            tar -xzf deployment.tar.gz -C ~/localhire-deploy
-            cd ~/localhire-deploy/deployment
+            tar -xzf "$ARTIFACT" -C ~/localhire-deploy
+            cd ~/localhire-deploy/deployment || exit 1
+            pwd
+            ls -la
 
             # Write environment variables
             echo "MONGO_USER=$MONGO_USER" > .env
@@ -97,6 +109,6 @@ jobs:
             # Clean up Docker space first
             docker system prune -af --volumes || true
 
-            # Build and start the application (no npm install needed)
+            # Build and start the application
             docker compose up -d --build
             docker image prune -f
