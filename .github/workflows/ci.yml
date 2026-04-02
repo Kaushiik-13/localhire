@@ -70,7 +70,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: deployment.tar.gz
-          target: /home/${{ secrets.EC2_USERNAME }}/deployment.tar.gz
+          target: /home/${{ secrets.EC2_USERNAME }}/
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
@@ -89,7 +89,7 @@ jobs:
 
             # Extract new deployment
             mkdir -p ~/localhire-deploy
-            tar -xzf deployment.tar.gz -C ~/localhire-deploy
+            tar -xzf ~/deployment.tar.gz -C ~/localhire-deploy
             cd ~/localhire-deploy/deployment
 
             # Write environment variables
