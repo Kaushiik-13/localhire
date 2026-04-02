@@ -33,12 +33,15 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build Docker image
         run: docker build -t localhire-api:${{ github.sha }} .
 
       - name: Test Docker image
         run: |
-          docker run -d --name test-app -e MONGODB_URI=mongodb://localhost:27017 localhire-api:${{ github.sha }}
+          docker run --name test-app -e MONGODB_URI=mongodb://localhost:27017 localhire-api:${{ github.sha }} &
           sleep 10
           docker logs test-app
           docker stop test-app || true
@@ -99,5 +102,5 @@ jobs:
             echo "SMTP_FROM_EMAIL=$SMTP_FROM_EMAIL" >> .env
 
             # Build and start the application
-            docker compose up -d --build
+            docker-compose up --build -d
             docker image prune -f
