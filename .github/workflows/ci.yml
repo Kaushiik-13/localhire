@@ -63,15 +63,17 @@ jobs:
           name: deployment-package
           path: ${{ github.workspace }}
 
+      - name: Copy artifact to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: deployment.tar.gz
+          target: /home/${{ secrets.EC2_USERNAME }}/deployment.tar.gz
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
-        env:
-          MONGO_USER: ${{ secrets.MONGO_USER }}
-          MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-          MONGO_DB: ${{ secrets.MONGO_DB }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          SMTP_FROM_EMAIL: ${{ secrets.SMTP_FROM_EMAIL }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
@@ -79,24 +81,16 @@ jobs:
           command_timeout: 30m
           envs: MONGO_USER,MONGO_PASSWORD,MONGO_DB,JWT_SECRET,RESEND_API_KEY,SMTP_FROM_EMAIL
           script: |
-            # Find and download artifact
-            ARTIFACT=$(find . -name "deployment.tar.gz" -type f | head -1)
-            if [ -z "$ARTIFACT" ]; then
-              echo "ERROR: deployment.tar.gz not found"
-              ls -la
-              exit 1
-            fi
-            echo "Found artifact: $ARTIFACT"
+            # Clean up Docker space first
+            docker system prune -af --volumes || true
 
             # Clean up old deployment
             rm -rf ~/localhire-deploy
 
             # Extract new deployment
             mkdir -p ~/localhire-deploy
-            tar -xzf "$ARTIFACT" -C ~/localhire-deploy
-            cd ~/localhire-deploy/deployment || exit 1
-            pwd
-            ls -la
+            tar -xzf deployment.tar.gz -C ~/localhire-deploy
+            cd ~/localhire-deploy/deployment
 
             # Write environment variables
             echo "MONGO_USER=$MONGO_USER" > .env
@@ -105,9 +99,6 @@ jobs:
             echo "JWT_SECRET=$JWT_SECRET" >> .env
             echo "RESEND_API_KEY=$RESEND_API_KEY" >> .env
             echo "SMTP_FROM_EMAIL=$SMTP_FROM_EMAIL" >> .env
-
-            # Clean up Docker space first
-            docker system prune -af --volumes || true
 
             # Build and start the application
             docker compose up -d --build
