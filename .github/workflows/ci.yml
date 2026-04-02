@@ -33,18 +33,23 @@ jobs:
       - name: Build application
         run: npm run build
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        run: docker build -t localhire-api:${{ github.sha }} .
-
-      - name: Test Docker image
+      - name: Create deployment package
         run: |
-          docker run --name test-app -e MONGODB_URI=mongodb://localhost:27017 localhire-api:${{ github.sha }} &
-          sleep 10
-          docker logs test-app
-          docker stop test-app || true
+          mkdir -p deployment
+          cp -r dist deployment/
+          cp -r node_modules deployment/
+          cp package*.json deployment/
+          cp tsconfig.json deployment/ || true
+          cp nest-cli.json deployment/ || true
+          cp Dockerfile deployment/ || true
+          cp docker-compose.yml deployment/ || true
+          tar -czf deployment.tar.gz deployment/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: deployment.tar.gz
 
   deploy:
     runs-on: ubuntu-latest
@@ -52,6 +57,11 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
 
     steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         env:
@@ -68,30 +78,13 @@ jobs:
           command_timeout: 30m
           envs: MONGO_USER,MONGO_PASSWORD,MONGO_DB,JWT_SECRET,RESEND_API_KEY,SMTP_FROM_EMAIL
           script: |
-            # Install git if not present
-            if ! command -v git &> /dev/null; then
-              sudo yum install -y git
-            fi
+            # Clean up old deployment
+            rm -rf ~/localhire-deploy
 
-            # Add swap memory if not already added (helps with builds on t3.micro)
-            if [ ! -f /swapfile ]; then
-              sudo dd if=/dev/zero of=/swapfile bs=128M count=16
-              sudo chmod 600 /swapfile
-              sudo mkswap /swapfile
-              sudo swapon /swapfile
-              echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
-            fi
-
-            # Clone or pull repository
-            if [ ! -d "$HOME/localhire/.git" ]; then
-              echo "Directory not found. Cloning repository..."
-              rm -rf ~/localhire
-              git clone https://github.com/Kaushiik-13/localhire.git ~/localhire
-            fi
-            cd ~/localhire
-            git fetch origin
-            git checkout master
-            git pull origin master
+            # Extract new deployment
+            mkdir -p ~/localhire-deploy
+            tar -xzf deployment.tar.gz -C ~/localhire-deploy
+            cd ~/localhire-deploy/deployment
 
             # Write environment variables
             echo "MONGO_USER=$MONGO_USER" > .env
@@ -101,6 +94,9 @@ jobs:
             echo "RESEND_API_KEY=$RESEND_API_KEY" >> .env
             echo "SMTP_FROM_EMAIL=$SMTP_FROM_EMAIL" >> .env
 
-            # Build and start the application
-            docker-compose up --build -d
+            # Clean up Docker space first
+            docker system prune -af --volumes || true
+
+            # Build and start the application (no npm install needed)
+            docker compose up -d --build
             docker image prune -f
