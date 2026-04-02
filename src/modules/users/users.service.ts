@@ -224,7 +224,7 @@ export class UsersService {
 
   async findAll() {
     const users = await this.userModel
-      .find()
+      .find({ roles: { $ne: 'admin' } })
       .select('-password_hash')
       .sort({ createdAt: -1 });
     return {
