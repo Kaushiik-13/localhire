@@ -109,5 +109,7 @@ jobs:
             echo "SMTP_FROM_EMAIL=$SMTP_FROM_EMAIL" >> .env
 
             # Build and start the application
-            docker compose up -d --build
+            docker --version
+            docker compose version || docker-compose --version || true
+            (docker compose up -d --build) || (docker-compose up -d --build)
             docker image prune -f
