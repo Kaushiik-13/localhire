@@ -21,6 +21,7 @@ import { AuthService } from './auth.service';
 import { CreateAdminInputDto } from './dto/inputs/admin.input.dto';
 import { UpdateAdminInputDto } from './dto/inputs/admin.input.dto';
 import { LoginInputDto } from './dto/inputs/login.input.dto';
+import { CreateBulkUserDto } from './dto/inputs/bulk-create-users.input.dto';
 import {
   AuthForgotPasswordInputDto,
   AuthVerifyOtpInputDto,
@@ -31,6 +32,7 @@ import { AdminLoginOutputDto } from './dto/outputs/admin-login.output.dto';
 import { AdminListOutputDto } from './dto/outputs/admin-list.output.dto';
 import { AuthMessageOutputDto } from './dto/outputs/message.output.dto';
 import { VerifyOtpOutputDto } from './dto/outputs/verify-otp.output.dto';
+import { BulkCreateUsersOutputDto } from './dto/outputs/bulk-create-users.output.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles_decorator } from '../../common/decorators/roles.decorator';
@@ -241,5 +243,27 @@ export class AuthController {
     @Request() req: AuthenticatedRequest,
   ) {
     return this.authService.deleteAdmin(id, req.user.userId);
+  }
+
+  @Post('bulk-users')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk create users (admin only)' })
+  @ApiResponse({
+    status: 201,
+    type: BulkCreateUsersOutputDto,
+    description: 'Bulk user creation completed',
+  })
+  @ApiResponse({
+    status: 401,
+    type: AuthMessageOutputDto,
+    description: 'Unauthorized',
+  })
+  async bulkCreateUsers(
+    @Body() users: CreateBulkUserDto[],
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.authService.bulkCreateUsers(users, req.user.userId);
   }
 }

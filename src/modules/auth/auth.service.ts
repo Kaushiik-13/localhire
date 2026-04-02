@@ -16,6 +16,7 @@ import { UserStatus } from '../../common/enums/status.enum';
 import { Types } from 'mongoose';
 import { CreateAdminInputDto } from './dto/inputs/admin.input.dto';
 import { UpdateAdminInputDto } from './dto/inputs/admin.input.dto';
+import { CreateBulkUserDto } from './dto/inputs/bulk-create-users.input.dto';
 import { EmailService } from '../email/email.service';
 
 interface OtpEntry {
@@ -335,6 +336,110 @@ export class AuthService {
 
     return {
       message: 'Admin deleted successfully',
+    };
+  }
+
+  async bulkCreateUsers(
+    users: CreateBulkUserDto[],
+    adminId: string,
+  ): Promise<{
+    message: string;
+    created_count: number;
+    failed_count: number;
+    results: Array<{
+      phone: string;
+      email: string;
+      status: 'success' | 'failed';
+      message: string;
+    }>;
+  }> {
+    const results: Array<{
+      phone: string;
+      email: string;
+      status: 'success' | 'failed';
+      message: string;
+    }> = [];
+
+    const createdUsers: UserDocument[] = [];
+    const failedUsers: Array<{
+      phone: string;
+      email: string;
+      status: 'failed';
+      message: string;
+    }> = [];
+
+    for (const userData of users) {
+      try {
+        const existingPhone = await this.userModel.findOne({
+          phone: userData.phone,
+        });
+
+        if (existingPhone) {
+          failedUsers.push({
+            phone: userData.phone,
+            email: userData.email || '',
+            status: 'failed' as const,
+            message: 'Phone number already registered',
+          });
+          continue;
+        }
+
+        if (userData.email) {
+          const existingEmail = await this.userModel.findOne({
+            email: userData.email,
+          });
+
+          if (existingEmail) {
+            failedUsers.push({
+              phone: userData.phone,
+              email: userData.email,
+              status: 'failed' as const,
+              message: 'Email already registered',
+            });
+            continue;
+          }
+        }
+
+        const passwordHash = await bcrypt.hash(userData.password, 10);
+
+        const user = new this.userModel({
+          name: userData.name,
+          phone: userData.phone,
+          email: userData.email,
+          password_hash: passwordHash,
+          profile_photo: userData.profile_photo,
+          language: userData.language || 'en',
+          status: userData.status || UserStatus.ACTIVE,
+          roles: userData.roles || [],
+          approval_status: userData.approval_status,
+          addresses: userData.addresses || [],
+          identity_docs: userData.identity_docs || [],
+        });
+
+        await user.save();
+        createdUsers.push(user);
+
+        results.push({
+          phone: userData.phone,
+          email: userData.email || '',
+          status: 'success',
+          message: 'User created successfully',
+        });
+      } catch (error) {
+        failedUsers.push({
+          phone: userData.phone,
+          email: userData.email || '',
+          status: 'failed' as const,
+          message: error.message || 'Failed to create user',
+        });
+      }
+    }
+
+    return {
+      message: 'Bulk user creation completed',
+      created_count: createdUsers.length,
+      failed_count: failedUsers.length,
+      results: [...results, ...failedUsers],
     };
   }
 
