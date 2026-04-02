@@ -7,9 +7,8 @@ import {
   IsNumber,
   ValidateNested,
   IsEmail,
-  Validate,
 } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { Role } from '../../../../common/enums/roles.enum';
 import { ApprovalStatus } from '../../../../common/enums/approval.enum';
 import {
@@ -17,12 +16,6 @@ import {
   AddressType,
   DocumentType,
 } from '../../../../common/enums/status.enum';
-
-function IsUserArray() {
-  return Validate((value: any) => {
-    return Array.isArray(value);
-  });
-}
 
 export class CreateBulkAddressDto {
   @IsString()

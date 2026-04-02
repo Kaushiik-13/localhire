@@ -341,7 +341,7 @@ export class AuthService {
 
   async bulkCreateUsers(
     users: CreateBulkUserDto[],
-    adminId: string,
+    _adminId: string, // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Promise<{
     message: string;
     created_count: number;
@@ -426,11 +426,13 @@ export class AuthService {
           message: 'User created successfully',
         });
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to create user';
         failedUsers.push({
           phone: userData.phone,
           email: userData.email || '',
           status: 'failed' as const,
-          message: error.message || 'Failed to create user',
+          message: errorMessage,
         });
       }
     }
