@@ -571,6 +571,48 @@ export class AdminService {
     return { count: data.length, data };
   }
 
+  async getSkillsStats(): Promise<any[]> {
+    const skills = await this.skillModel.find().exec();
+    const totalWorkers = await this.workerModel.countDocuments();
+    const totalSPs = await this.serviceProviderModel.countDocuments();
+    const totalPeople = totalWorkers + totalSPs;
+
+    const workerSkillCounts = await this.workerModel.aggregate([
+      { $unwind: '$skills' },
+      { $group: { _id: '$skills', count: { $sum: 1 } } },
+    ]);
+
+    const spSkillCounts = await this.serviceProviderModel.aggregate([
+      { $unwind: '$skills' },
+      { $group: { _id: '$skills', count: { $sum: 1 } } },
+    ]);
+
+    const skillCountMap = new Map<string, number>();
+    workerSkillCounts.forEach((s) => {
+      const key = s._id.toString();
+      skillCountMap.set(key, (skillCountMap.get(key) || 0) + s.count);
+    });
+    spSkillCounts.forEach((s) => {
+      const key = s._id.toString();
+      skillCountMap.set(key, (skillCountMap.get(key) || 0) + s.count);
+    });
+
+    return skills
+      .map((skill) => {
+        const idStr = skill._id.toString();
+        const count = skillCountMap.get(idStr) || 0;
+        const percentage =
+          totalPeople > 0 ? ((count / totalPeople) * 100).toFixed(1) : '0';
+
+        return {
+          skill_name: skill.skill_name,
+          count,
+          percentage: `${percentage}%`,
+        };
+      })
+      .sort((a, b) => b.count - a.count);
+  }
+
   async getListingsByLocation(): Promise<AdminListResponse<any>> {
     const data = await this.listingModel.aggregate([
       { $match: { 'address.city': { $exists: true, $ne: null } } },

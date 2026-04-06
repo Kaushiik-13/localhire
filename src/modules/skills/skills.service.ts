@@ -68,4 +68,73 @@ export class SkillsService {
       throw new NotFoundException('Skill not found');
     }
   }
+
+  async bulkCreateSkills(
+    skills: Array<{ skill_name: string }>,
+    _adminId: string,
+  ): Promise<{
+    message: string;
+    created_count: number;
+    failed_count: number;
+    results: Array<{
+      skill_name: string;
+      status: 'success' | 'failed';
+      message: string;
+    }>;
+  }> {
+    const results: Array<{
+      skill_name: string;
+      status: 'success' | 'failed';
+      message: string;
+    }> = [];
+
+    const createdCount = 0;
+    const failedCount = 0;
+
+    for (const skillData of skills) {
+      try {
+        const existingSkill = await this.skillModel.findOne({
+          skill_name: skillData.skill_name,
+        });
+
+        if (existingSkill) {
+          results.push({
+            skill_name: skillData.skill_name,
+            status: 'failed',
+            message: 'Skill name already exists',
+          });
+          continue;
+        }
+
+        const skill = new this.skillModel({
+          skill_name: skillData.skill_name,
+          created_by: _adminId ? new Types.ObjectId(_adminId) : undefined,
+        });
+
+        await skill.save();
+
+        results.push({
+          skill_name: skillData.skill_name,
+          status: 'success',
+          message: 'Skill created successfully',
+        });
+      } catch (error) {
+        results.push({
+          skill_name: skillData.skill_name,
+          status: 'failed',
+          message: error.message || 'Failed to create skill',
+        });
+      }
+    }
+
+    const created_count = results.filter((r) => r.status === 'success').length;
+    const failed_count = results.filter((r) => r.status === 'failed').length;
+
+    return {
+      message: `Bulk skill creation completed. ${created_count} created, ${failed_count} failed.`,
+      created_count,
+      failed_count,
+      results,
+    };
+  }
 }

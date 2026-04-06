@@ -12,6 +12,7 @@ import {
 import { SkillsService } from './skills.service';
 import { CreateSkillDto } from './dto/create-skill.dto';
 import { UpdateSkillDto } from './dto/create-skill.dto';
+import { CreateBulkSkillDto } from './dto/bulk-create-skills.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles_decorator } from '../../common/decorators/roles.decorator';
@@ -111,5 +112,25 @@ export class SkillsController {
   })
   remove(@Param('id') id: string) {
     return this.skillsService.remove(id);
+  }
+
+  @Post('bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk create skills (admin only)' })
+  @ApiResponse({
+    status: 201,
+    description: 'Bulk skill creation completed',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  async bulkCreateSkills(
+    @Body() skills: CreateBulkSkillDto[],
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.skillsService.bulkCreateSkills(skills, req.user.userId);
   }
 }

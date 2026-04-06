@@ -336,6 +336,17 @@ export class AdminController {
     return this.adminService.getListingsBySkills();
   }
 
+  @Get('dashboard/skills-stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Get skills statistics with worker and service provider counts',
+  })
+  @ApiResponse({ status: 200 })
+  getSkillsStats() {
+    return this.adminService.getSkillsStats();
+  }
+
   @Get('dashboard/listings/salary-range')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles_decorator(Role.ADMIN)
