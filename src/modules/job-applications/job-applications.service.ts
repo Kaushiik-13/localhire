@@ -30,18 +30,17 @@ export class JobApplicationsService {
   ) {}
 
   async create(
-    createJobApplicationDto: CreateJobApplicationInputDto,
+    listingId: string,
+    workerId: string,
   ): Promise<JobApplicationDocument> {
-    const listing = await this.listingModel.findById(
-      createJobApplicationDto.listing_id,
-    );
+    const listing = await this.listingModel.findById(listingId);
     if (!listing) {
       throw new NotFoundException('Listing not found');
     }
 
     const application = new this.jobApplicationModel({
-      listing_id: new Types.ObjectId(createJobApplicationDto.listing_id),
-      worker_id: new Types.ObjectId(createJobApplicationDto.worker_id),
+      listing_id: new Types.ObjectId(listingId),
+      worker_id: new Types.ObjectId(workerId),
       employer_id: listing.created_by,
       applied_at: new Date(),
     });

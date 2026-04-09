@@ -49,8 +49,14 @@ export class JobApplicationsController {
   @Roles_decorator(Role.WORKER)
   @ApiOperation({ summary: 'Create a job application (worker only)' })
   @ApiResponse({ status: 201, type: JobApplicationOutputDto })
-  create(@Body() createJobApplicationDto: CreateJobApplicationInputDto) {
-    return this.jobApplicationsService.create(createJobApplicationDto);
+  create(
+    @Body() createJobApplicationDto: CreateJobApplicationInputDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.jobApplicationsService.create(
+      createJobApplicationDto.listing_id,
+      req.user.userId,
+    );
   }
 
   @Get('available-listings')

@@ -10,14 +10,6 @@ export class CreateJobApplicationInputDto {
   @IsString()
   @IsNotEmpty()
   listing_id: string;
-
-  @ApiProperty({
-    example: '507f1f77bcf86cd799439012',
-    description: 'The ID of the worker applying',
-  })
-  @IsString()
-  @IsNotEmpty()
-  worker_id: string;
 }
 
 export class UpdateApplicationStatusInputDto {
