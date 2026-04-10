@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Request,
@@ -18,6 +19,7 @@ import {
   ListingApplicantsOutputDto,
   WorkerApplicationsListOutputDto,
   ApplicationStatusUpdateOutputDto,
+  DeleteAllOutputDto,
 } from './dto/outputs/job-application.output.dto';
 import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -79,6 +81,13 @@ export class JobApplicationsController {
       listingId,
       req.user.userId,
     );
+  }
+
+  @Delete()
+  @ApiOperation({ summary: 'Delete all job applications' })
+  @ApiResponse({ status: 200, type: DeleteAllOutputDto })
+  deleteAll() {
+    return this.jobApplicationsService.deleteAll();
   }
 
   @Patch(':id/status')

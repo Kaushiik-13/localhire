@@ -17,6 +17,7 @@ import {
   ListingApplicantsOutputDto,
   WorkerApplicationsListOutputDto,
   ApplicationStatusUpdateOutputDto,
+  DeleteAllOutputDto,
 } from './dto/outputs/job-application.output.dto';
 
 @Injectable()
@@ -75,7 +76,19 @@ export class JobApplicationsService {
 
     return {
       count: applications.length,
-      applications: applications.map((app) => app.toObject()),
+      applications: applications.map((app) => {
+        const obj = app.toObject() as any;
+        return {
+          id: (obj._id as any).toString(),
+          listing_id: obj.listing_id,
+          worker_id: obj.worker_id.toString(),
+          employer_id: obj.employer_id,
+          status: obj.status,
+          applied_at: obj.applied_at,
+          createdAt: obj.createdAt,
+          updatedAt: obj.updatedAt,
+        };
+      }),
     };
   }
 
@@ -148,10 +161,31 @@ export class JobApplicationsService {
     application.status = status;
     await application.save();
 
+    if (status === ApplicationStatus.ACCEPTED) {
+      await this.jobApplicationModel
+        .updateMany(
+          {
+            listing_id: application.listing_id,
+            _id: { $ne: application._id },
+            status: ApplicationStatus.APPLIED,
+          },
+          { status: ApplicationStatus.REJECTED },
+        )
+        .exec();
+    }
+
     return {
       id: application._id.toString(),
       status: application.status,
       message: 'Application status updated successfully',
+    };
+  }
+
+  async deleteAll(): Promise<DeleteAllOutputDto> {
+    const result = await this.jobApplicationModel.deleteMany({}).exec();
+    return {
+      message: 'All job applications deleted successfully',
+      deletedCount: result.deletedCount,
     };
   }
 }

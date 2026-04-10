@@ -76,12 +76,42 @@ export class JobApplicationOutputDto {
   updatedAt: Date;
 }
 
+class WorkerApplicationOutputDto {
+  @ApiProperty({ example: '69d8a3a78d5db95d46ff42bb' })
+  id: string;
+
+  @ApiProperty({ type: Object })
+  listing_id: Record<string, any>;
+
+  @ApiProperty({ example: '69d0ff5e2edf32b2239f3901' })
+  worker_id: string;
+
+  @ApiProperty({
+    example: '69ce06a3ae56c107b3abf982',
+    required: false,
+    nullable: true,
+  })
+  employer_id: Record<string, any> | null;
+
+  @ApiProperty({ enum: ApplicationStatus, example: ApplicationStatus.APPLIED })
+  status: ApplicationStatus;
+
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
+  applied_at: Date;
+
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
+  createdAt: Date;
+
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
+  updatedAt: Date;
+}
+
 export class WorkerApplicationsListOutputDto {
   @ApiProperty({ example: 2 })
   count: number;
 
-  @ApiProperty({ type: [Object] })
-  applications: Record<string, any>[];
+  @ApiProperty({ type: [WorkerApplicationOutputDto] })
+  applications: WorkerApplicationOutputDto[];
 }
 
 export class ApplicationStatusUpdateOutputDto {
@@ -93,4 +123,12 @@ export class ApplicationStatusUpdateOutputDto {
 
   @ApiProperty({ example: 'Application status updated successfully' })
   message: string;
+}
+
+export class DeleteAllOutputDto {
+  @ApiProperty({ example: 'All job applications deleted successfully' })
+  message: string;
+
+  @ApiProperty({ example: 5 })
+  deletedCount: number;
 }
