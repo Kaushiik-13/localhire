@@ -105,16 +105,6 @@ export class CreateListingInputDto {
   @IsNotEmpty()
   listing_type: string;
 
-  @ApiProperty({ example: '507f1f77bcf86cd799439011' })
-  @IsString()
-  @IsNotEmpty()
-  created_by: string;
-
-  @ApiProperty({ enum: ['employer', 'customer'], example: 'employer' })
-  @IsEnum(['employer', 'customer'])
-  @IsNotEmpty()
-  created_by_role: string;
-
   @ApiPropertyOptional({
     example: {
       address_line1: '123 Main Street',

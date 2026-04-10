@@ -1,5 +1,21 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { ApplicationStatus } from '../../../../common/enums/status.enum';
+
+export class ApplicantOutputDto {
+  @ApiProperty({ example: '69ce05c8ae56c107b3abf956' })
+  worker_id: string;
+
+  @ApiProperty({ example: 'John Doe' })
+  worker_name: string;
+}
+
+export class ListingApplicantsOutputDto {
+  @ApiProperty({ example: '69d893bb05ec8bea742c5968' })
+  listing_id: string;
+
+  @ApiProperty({ type: [ApplicantOutputDto] })
+  applicants: ApplicantOutputDto[];
+}
 
 class JobApplicationListingOutputDto {
   @ApiProperty({ example: '507f1f77bcf86cd799439011' })
@@ -54,15 +70,10 @@ export class JobApplicationOutputDto {
   updatedAt: Date;
 }
 
-export class JobApplicationListOutputDto {
-  @ApiProperty({ example: 10 })
+export class WorkerApplicationsListOutputDto {
+  @ApiProperty({ example: 2 })
   count: number;
 
-  @ApiPropertyOptional({ type: [JobApplicationOutputDto] })
-  applications?: JobApplicationOutputDto[];
-}
-
-export class JobApplicationMessageOutputDto {
-  @ApiProperty({ example: 'Job application created successfully' })
-  message: string;
+  @ApiProperty({ type: [Object] })
+  applications: Record<string, any>[];
 }

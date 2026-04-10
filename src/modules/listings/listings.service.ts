@@ -19,10 +19,13 @@ export class ListingsService {
 
   async create(
     createListingDto: CreateListingInputDto,
+    userId: string,
+    createdByRole: string,
   ): Promise<ListingDocument> {
     const listing = new this.listingModel({
       ...createListingDto,
-      created_by: new Types.ObjectId(createListingDto.created_by),
+      created_by: new Types.ObjectId(userId),
+      created_by_role: createdByRole,
       job_details: createListingDto.job_details
         ? {
             ...createListingDto.job_details,
@@ -54,6 +57,14 @@ export class ListingsService {
       throw new NotFoundException('Listing not found');
     }
     return listing;
+  }
+
+  async findByEmployer(employerId: string): Promise<ListingDocument[]> {
+    return this.listingModel
+      .find({ created_by: new Types.ObjectId(employerId) })
+      .populate('created_by')
+      .populate('job_details.required_skills')
+      .exec();
   }
 
   async findByType(listingType: string): Promise<ListingDocument[]> {

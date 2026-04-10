@@ -29,6 +29,7 @@ import { ApprovalStatus } from '../../common/enums/approval.enum';
 interface AuthenticatedRequest {
   user: {
     userId: string;
+    roles: string[];
   };
 }
 
@@ -42,8 +43,15 @@ export class ListingsController {
   @Roles_decorator(Role.EMPLOYER, Role.CUSTOMER)
   @ApiOperation({ summary: 'Create a listing' })
   @ApiResponse({ status: 201, type: ListingOutputDto })
-  create(@Body() createListingDto: CreateListingInputDto) {
-    return this.listingsService.create(createListingDto);
+  create(
+    @Body() createListingDto: CreateListingInputDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.listingsService.create(
+      createListingDto,
+      req.user.userId,
+      req.user.roles[0],
+    );
   }
 
   @Get()
@@ -51,6 +59,17 @@ export class ListingsController {
   @ApiResponse({ type: ListingListOutputDto })
   findAll() {
     return this.listingsService.findAll();
+  }
+
+  @Get('my-listings')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.EMPLOYER)
+  @ApiOperation({
+    summary: 'Get listings created by the authenticated employer',
+  })
+  @ApiResponse({ type: ListingListOutputDto })
+  findMyListings(@Request() req: AuthenticatedRequest) {
+    return this.listingsService.findByEmployer(req.user.userId);
   }
 
   @Get(':id')

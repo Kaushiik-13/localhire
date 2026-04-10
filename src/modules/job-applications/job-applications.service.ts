@@ -10,15 +10,12 @@ import {
   JobApplicationDocument,
 } from '../../schemas/job-application.schema';
 import { Listing, ListingDocument } from '../../schemas/listing.schema';
+import { Worker, WorkerDocument } from '../../schemas/worker.schema';
+import { User, UserDocument } from '../../schemas/user.schema';
 import {
-  CreateJobApplicationInputDto,
-  UpdateApplicationStatusInputDto,
-} from './dto/inputs/job-application.input.dto';
-import { ApprovalStatus } from '../../common/enums/approval.enum';
-import {
-  ListingStatus,
-  ApplicationStatus,
-} from '../../common/enums/status.enum';
+  ListingApplicantsOutputDto,
+  WorkerApplicationsListOutputDto,
+} from './dto/outputs/job-application.output.dto';
 
 @Injectable()
 export class JobApplicationsService {
@@ -27,117 +24,100 @@ export class JobApplicationsService {
     private jobApplicationModel: Model<JobApplicationDocument>,
     @InjectModel(Listing.name)
     private listingModel: Model<ListingDocument>,
+    @InjectModel(Worker.name)
+    private workerModel: Model<WorkerDocument>,
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>,
   ) {}
 
   async create(
     listingId: string,
-    workerId: string,
+    userId: string,
   ): Promise<JobApplicationDocument> {
     const listing = await this.listingModel.findById(listingId);
     if (!listing) {
       throw new NotFoundException('Listing not found');
     }
 
+    const worker = await this.workerModel.findOne({
+      user_id: new Types.ObjectId(userId),
+    });
+    if (!worker) {
+      throw new NotFoundException('Worker profile not found');
+    }
+
     const application = new this.jobApplicationModel({
       listing_id: new Types.ObjectId(listingId),
-      worker_id: new Types.ObjectId(workerId),
+      worker_id: worker._id,
       employer_id: listing.created_by,
       applied_at: new Date(),
     });
     return application.save();
   }
 
-  async findByListing(listingId: string): Promise<JobApplicationDocument[]> {
-    return this.jobApplicationModel
-      .find({ listing_id: new Types.ObjectId(listingId) })
-      .populate('worker_id')
-      .populate('employer_id')
-      .exec();
-  }
+  async findByWorkerApplications(
+    userId: string,
+  ): Promise<WorkerApplicationsListOutputDto> {
+    const worker = await this.workerModel.findOne({
+      user_id: new Types.ObjectId(userId),
+    });
+    if (!worker) {
+      throw new NotFoundException('Worker profile not found');
+    }
 
-  async findByWorker(workerId: string): Promise<JobApplicationDocument[]> {
-    return this.jobApplicationModel
-      .find({ worker_id: new Types.ObjectId(workerId) })
+    const applications = await this.jobApplicationModel
+      .find({ worker_id: worker._id })
       .populate('listing_id')
       .populate('employer_id')
       .exec();
+
+    return {
+      count: applications.length,
+      applications: applications.map((app) => app.toObject()),
+    };
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.jobApplicationModel.findByIdAndDelete(id).exec();
-    if (!result) {
-      throw new NotFoundException('Job application not found');
-    }
-  }
-
-  async findAvailableListings(
-    listingTypes: string[],
-  ): Promise<ListingDocument[]> {
-    return this.listingModel
-      .find({
-        approval_status: ApprovalStatus.APPROVED,
-        status: ListingStatus.ACTIVE,
-        listing_type: { $in: listingTypes },
-      })
-      .populate('created_by')
-      .populate('job_details.required_skills')
-      .exec();
-  }
-
-  async updateApplicationStatus(
-    id: string,
-    updateStatusDto: UpdateApplicationStatusInputDto,
+  async findApplicantsByListing(
+    listingId: string,
     employerId: string,
-  ): Promise<JobApplicationDocument> {
-    const application = await this.jobApplicationModel.findById(id);
-    if (!application) {
-      throw new NotFoundException('Job application not found');
+  ): Promise<ListingApplicantsOutputDto> {
+    const listing = await this.listingModel.findById(listingId);
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
     }
 
-    if (application.employer_id.toString() !== employerId) {
+    if (listing.created_by.toString() !== employerId) {
       throw new ForbiddenException(
-        'You can only update applications for your own listings',
+        'You can only view applicants for your own listings',
       );
     }
 
-    if (application.status !== ApplicationStatus.APPLIED) {
-      throw new ForbiddenException('Application has already been processed');
-    }
-
-    application.status = updateStatusDto.status;
-    return application.save();
-  }
-
-  async findByEmployer(employerId: string): Promise<JobApplicationDocument[]> {
-    return this.jobApplicationModel
-      .find({ employer_id: new Types.ObjectId(employerId) })
-      .populate('listing_id')
-      .populate('worker_id')
+    const applications = await this.jobApplicationModel
+      .find({ listing_id: new Types.ObjectId(listingId) })
       .exec();
-  }
 
-  async withdrawApplication(
-    id: string,
-    workerId: string,
-  ): Promise<JobApplicationDocument> {
-    const application = await this.jobApplicationModel.findById(id);
-    if (!application) {
-      throw new NotFoundException('Job application not found');
-    }
+    const applicantDtos = await Promise.all(
+      applications.map(async (app) => {
+        let worker = await this.workerModel.findById(app.worker_id);
+        if (!worker) {
+          worker = await this.workerModel.findOne({
+            user_id: app.worker_id,
+          });
+        }
+        const user = worker
+          ? await this.userModel.findById(worker.user_id)
+          : await this.userModel.findById(app.worker_id);
 
-    if (application.worker_id.toString() !== workerId) {
-      throw new ForbiddenException(
-        'You can only withdraw your own applications',
-      );
-    }
+        return {
+          worker_id: app.worker_id.toString(),
+          worker_name: user?.name ?? '',
+        };
+      }),
+    );
 
-    if (application.status !== ApplicationStatus.APPLIED) {
-      throw new ForbiddenException(
-        'You can only withdraw applications with status applied',
-      );
-    }
-
-    application.status = ApplicationStatus.WITHDRAWN;
-    return application.save();
+    return {
+      listing_id: listingId,
+      applicants: applicantDtos,
+    };
   }
 }

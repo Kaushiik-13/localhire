@@ -2,30 +2,19 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
   Body,
   Param,
-  Delete,
-  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { JobApplicationsService } from './job-applications.service';
-import {
-  CreateJobApplicationInputDto,
-  UpdateApplicationStatusInputDto,
-} from './dto/inputs/job-application.input.dto';
+import { CreateJobApplicationInputDto } from './dto/inputs/job-application.input.dto';
 import {
   JobApplicationOutputDto,
-  JobApplicationListOutputDto,
-  JobApplicationMessageOutputDto,
+  ListingApplicantsOutputDto,
+  WorkerApplicationsListOutputDto,
 } from './dto/outputs/job-application.output.dto';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiQuery,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles_decorator } from '../../common/decorators/roles.decorator';
@@ -59,81 +48,31 @@ export class JobApplicationsController {
     );
   }
 
-  @Get('available-listings')
-  @ApiOperation({ summary: 'Get available listings for job applications' })
-  @ApiQuery({
-    name: 'types',
-    required: false,
-    isArray: true,
-    enum: ['job', 'service'],
-    description: 'Filter by listing type',
-  })
-  @ApiResponse({
-    status: 200,
-    type: JobApplicationListOutputDto,
-    description: 'Returns approved and active listings',
-  })
-  findAvailableListings(@Query('types') types?: string[]) {
-    return this.jobApplicationsService.findAvailableListings(types || ['job']);
-  }
-
-  @Get('listing/:listingId')
-  @ApiOperation({ summary: 'Get job applications by listing ID' })
-  @ApiResponse({ type: JobApplicationListOutputDto })
-  findByListing(@Param('listingId') listingId: string) {
-    return this.jobApplicationsService.findByListing(listingId);
-  }
-
-  @Get('worker/:workerId')
-  @ApiOperation({ summary: 'Get job applications by worker ID' })
-  @ApiResponse({ type: JobApplicationListOutputDto })
-  findByWorker(@Param('workerId') workerId: string) {
-    return this.jobApplicationsService.findByWorker(workerId);
-  }
-
-  @Get('employer/my-applications')
+  @Get('my-applications')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.EMPLOYER)
-  @ApiOperation({ summary: 'Get job applications for employer listings' })
-  @ApiResponse({ type: JobApplicationListOutputDto })
-  findByEmployer(@Request() req: AuthenticatedRequest) {
-    return this.jobApplicationsService.findByEmployer(req.user.userId);
-  }
-
-  @Patch(':id/status')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.EMPLOYER)
+  @Roles_decorator(Role.WORKER)
   @ApiOperation({
-    summary: 'Update application status - accept/reject (employer only)',
+    summary: 'Get job applications for the authenticated worker',
   })
-  @ApiResponse({ type: JobApplicationOutputDto })
-  updateStatus(
-    @Param('id') id: string,
-    @Body() updateStatusDto: UpdateApplicationStatusInputDto,
-    @Request() req: AuthenticatedRequest,
-  ) {
-    return this.jobApplicationsService.updateApplicationStatus(
-      id,
-      updateStatusDto,
+  @ApiResponse({ status: 200, type: WorkerApplicationsListOutputDto })
+  findMyApplications(@Request() req: AuthenticatedRequest) {
+    return this.jobApplicationsService.findByWorkerApplications(
       req.user.userId,
     );
   }
 
-  @Post(':id/withdraw')
+  @Get('listing/:listingId/applicants')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.WORKER)
-  @ApiOperation({ summary: 'Withdraw application (worker only)' })
-  @ApiResponse({ type: JobApplicationOutputDto })
-  withdraw(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
-    return this.jobApplicationsService.withdrawApplication(id, req.user.userId);
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.WORKER, Role.EMPLOYER)
-  @ApiOperation({ summary: 'Delete a job application' })
-  @ApiResponse({ type: JobApplicationMessageOutputDto })
-  remove(@Param('id') id: string) {
-    return this.jobApplicationsService.remove(id);
+  @Roles_decorator(Role.EMPLOYER)
+  @ApiOperation({ summary: 'Get applicants for a listing (employer only)' })
+  @ApiResponse({ status: 200, type: ListingApplicantsOutputDto })
+  findApplicantsByListing(
+    @Param('listingId') listingId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.jobApplicationsService.findApplicantsByListing(
+      listingId,
+      req.user.userId,
+    );
   }
 }
