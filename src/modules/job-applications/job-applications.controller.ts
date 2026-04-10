@@ -2,17 +2,22 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { JobApplicationsService } from './job-applications.service';
-import { CreateJobApplicationInputDto } from './dto/inputs/job-application.input.dto';
+import {
+  CreateJobApplicationInputDto,
+  UpdateApplicationStatusInputDto,
+} from './dto/inputs/job-application.input.dto';
 import {
   JobApplicationOutputDto,
   ListingApplicantsOutputDto,
   WorkerApplicationsListOutputDto,
+  ApplicationStatusUpdateOutputDto,
 } from './dto/outputs/job-application.output.dto';
 import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -72,6 +77,25 @@ export class JobApplicationsController {
   ) {
     return this.jobApplicationsService.findApplicantsByListing(
       listingId,
+      req.user.userId,
+    );
+  }
+
+  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.EMPLOYER)
+  @ApiOperation({
+    summary: 'Update application status - accept/reject (employer only)',
+  })
+  @ApiResponse({ status: 200, type: ApplicationStatusUpdateOutputDto })
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateApplicationStatusInputDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.jobApplicationsService.updateApplicationStatus(
+      id,
+      updateStatusDto.status,
       req.user.userId,
     );
   }

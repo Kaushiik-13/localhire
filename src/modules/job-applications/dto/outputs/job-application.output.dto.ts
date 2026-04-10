@@ -2,11 +2,17 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ApplicationStatus } from '../../../../common/enums/status.enum';
 
 export class ApplicantOutputDto {
+  @ApiProperty({ example: '69d8981955f36031a2d09f79' })
+  application_id: string;
+
   @ApiProperty({ example: '69ce05c8ae56c107b3abf956' })
   worker_id: string;
 
   @ApiProperty({ example: 'John Doe' })
   worker_name: string;
+
+  @ApiProperty({ enum: ApplicationStatus, example: ApplicationStatus.APPLIED })
+  status: ApplicationStatus;
 }
 
 export class ListingApplicantsOutputDto {
@@ -76,4 +82,15 @@ export class WorkerApplicationsListOutputDto {
 
   @ApiProperty({ type: [Object] })
   applications: Record<string, any>[];
+}
+
+export class ApplicationStatusUpdateOutputDto {
+  @ApiProperty({ example: '69d8981955f36031a2d09f79' })
+  id: string;
+
+  @ApiProperty({ enum: ApplicationStatus, example: ApplicationStatus.ACCEPTED })
+  status: ApplicationStatus;
+
+  @ApiProperty({ example: 'Application status updated successfully' })
+  message: string;
 }

@@ -12,9 +12,11 @@ import {
 import { Listing, ListingDocument } from '../../schemas/listing.schema';
 import { Worker, WorkerDocument } from '../../schemas/worker.schema';
 import { User, UserDocument } from '../../schemas/user.schema';
+import { ApplicationStatus } from '../../common/enums/status.enum';
 import {
   ListingApplicantsOutputDto,
   WorkerApplicationsListOutputDto,
+  ApplicationStatusUpdateOutputDto,
 } from './dto/outputs/job-application.output.dto';
 
 @Injectable()
@@ -109,8 +111,10 @@ export class JobApplicationsService {
           : await this.userModel.findById(app.worker_id);
 
         return {
+          application_id: app._id.toString(),
           worker_id: app.worker_id.toString(),
           worker_name: user?.name ?? '',
+          status: app.status,
         };
       }),
     );
@@ -118,6 +122,36 @@ export class JobApplicationsService {
     return {
       listing_id: listingId,
       applicants: applicantDtos,
+    };
+  }
+
+  async updateApplicationStatus(
+    id: string,
+    status: ApplicationStatus,
+    employerId: string,
+  ): Promise<ApplicationStatusUpdateOutputDto> {
+    const application = await this.jobApplicationModel.findById(id);
+    if (!application) {
+      throw new NotFoundException('Job application not found');
+    }
+
+    if (application.employer_id.toString() !== employerId) {
+      throw new ForbiddenException(
+        'You can only update applications for your own listings',
+      );
+    }
+
+    if (application.status !== ApplicationStatus.APPLIED) {
+      throw new ForbiddenException('Application has already been processed');
+    }
+
+    application.status = status;
+    await application.save();
+
+    return {
+      id: application._id.toString(),
+      status: application.status,
+      message: 'Application status updated successfully',
     };
   }
 }
