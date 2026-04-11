@@ -172,6 +172,26 @@ export class JobApplicationsService {
           { status: ApplicationStatus.REJECTED },
         )
         .exec();
+
+      const worker = await this.workerModel.findById(application.worker_id);
+      const user = worker
+        ? await this.userModel.findById(worker.user_id)
+        : null;
+
+      await this.listingModel
+        .updateOne(
+          { _id: application.listing_id },
+          {
+            accepted_worker: {
+              worker_id: application.worker_id,
+              worker_name: user?.name ?? '',
+              application_id: application._id,
+              status: 'accepted',
+              accepted_at: new Date(),
+            },
+          },
+        )
+        .exec();
     }
 
     return {

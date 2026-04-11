@@ -9,3 +9,5 @@ export * from './review.schema';
 export * from './notification.schema';
 export * from './skill.schema';
 export * from './language.schema';
+export * from './report.schema';
+export * from './counter.schema';

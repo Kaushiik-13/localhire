@@ -62,6 +62,24 @@ export class ListingImage {
   order?: number;
 }
 
+@Schema()
+export class AcceptedWorker {
+  @Prop({ type: Types.ObjectId, ref: 'Worker' })
+  worker_id: Types.ObjectId;
+
+  @Prop()
+  worker_name: string;
+
+  @Prop({ type: Types.ObjectId })
+  application_id: Types.ObjectId;
+
+  @Prop()
+  status: string;
+
+  @Prop()
+  accepted_at: Date;
+}
+
 @Schema({ timestamps: true })
 export class Listing {
   @Prop({ required: true })
@@ -102,6 +120,9 @@ export class Listing {
 
   @Prop({ type: [ListingImage], default: [] })
   images: ListingImage[];
+
+  @Prop({ type: AcceptedWorker })
+  accepted_worker?: AcceptedWorker;
 }
 
 export const ListingSchema = SchemaFactory.createForClass(Listing);
