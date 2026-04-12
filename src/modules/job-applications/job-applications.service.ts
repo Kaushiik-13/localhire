@@ -11,6 +11,7 @@ import {
 } from '../../schemas/job-application.schema';
 import { Listing, ListingDocument } from '../../schemas/listing.schema';
 import { Worker, WorkerDocument } from '../../schemas/worker.schema';
+import { Employer, EmployerDocument } from '../../schemas/employer.schema';
 import { User, UserDocument } from '../../schemas/user.schema';
 import { ApplicationStatus } from '../../common/enums/status.enum';
 import {
@@ -29,6 +30,8 @@ export class JobApplicationsService {
     private listingModel: Model<ListingDocument>,
     @InjectModel(Worker.name)
     private workerModel: Model<WorkerDocument>,
+    @InjectModel(Employer.name)
+    private employerModel: Model<EmployerDocument>,
     @InjectModel(User.name)
     private userModel: Model<UserDocument>,
   ) {}
@@ -49,10 +52,17 @@ export class JobApplicationsService {
       throw new NotFoundException('Worker profile not found');
     }
 
+    const employer = await this.employerModel.findOne({
+      user_id: listing.created_by,
+    });
+    if (!employer) {
+      throw new NotFoundException('Employer profile not found');
+    }
+
     const application = new this.jobApplicationModel({
       listing_id: new Types.ObjectId(listingId),
       worker_id: worker._id,
-      employer_id: listing.created_by,
+      employer_id: employer._id,
       applied_at: new Date(),
     });
     return application.save();
@@ -148,7 +158,13 @@ export class JobApplicationsService {
       throw new NotFoundException('Job application not found');
     }
 
-    if (application.employer_id.toString() !== employerId) {
+    const employer = await this.employerModel.findOne({
+      user_id: new Types.ObjectId(employerId),
+    });
+    if (
+      !employer ||
+      application.employer_id.toString() !== employer._id.toString()
+    ) {
       throw new ForbiddenException(
         'You can only update applications for your own listings',
       );

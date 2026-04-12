@@ -8,6 +8,7 @@ import {
 } from '../../schemas/job-application.schema';
 import { Listing, ListingSchema } from '../../schemas/listing.schema';
 import { Worker, WorkerSchema } from '../../schemas/worker.schema';
+import { Employer, EmployerSchema } from '../../schemas/employer.schema';
 import { User, UserSchema } from '../../schemas/user.schema';
 
 @Module({
@@ -16,6 +17,7 @@ import { User, UserSchema } from '../../schemas/user.schema';
       { name: JobApplication.name, schema: JobApplicationSchema },
       { name: Listing.name, schema: ListingSchema },
       { name: Worker.name, schema: WorkerSchema },
+      { name: Employer.name, schema: EmployerSchema },
       { name: User.name, schema: UserSchema },
     ]),
   ],
