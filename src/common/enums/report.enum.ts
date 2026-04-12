@@ -45,5 +45,14 @@ export enum EntityType {
   WORKER = 'worker',
   EMPLOYER = 'employer',
   SERVICE_PROVIDER = 'service_provider',
+  CUSTOMER = 'customer',
   JOB_POST = 'job_post',
+  PLATFORM = 'platform',
 }
+
+export const PERSON_ENTITY_TYPES: EntityType[] = [
+  EntityType.WORKER,
+  EntityType.EMPLOYER,
+  EntityType.SERVICE_PROVIDER,
+  EntityType.CUSTOMER,
+];

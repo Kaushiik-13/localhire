@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Report, ReportDocument } from '../../schemas/report.schema';
@@ -7,12 +11,33 @@ import { CreateReportInputDto } from './dto/inputs/report.input.dto';
 import { UpdateReportInputDto } from './dto/inputs/report.input.dto';
 import { ResolveReportInputDto } from './dto/inputs/report.input.dto';
 import { AddNoteInputDto } from './dto/inputs/report.input.dto';
-import { ReportStatus } from '../../common/enums/report.enum';
+import {
+  ReportStatus,
+  EntityType,
+  PERSON_ENTITY_TYPES,
+} from '../../common/enums/report.enum';
+import { ReporterType } from '../../common/enums/report.enum';
+import { Role } from '../../common/enums/roles.enum';
+import { UsersService } from '../users/users.service';
+import { ListingsService } from '../listings/listings.service';
 import {
   ReportStatsOutputDto,
   ReportListOutputDto,
   ReportMessageOutputDto,
 } from './dto/outputs/report.output.dto';
+
+interface AuthUser {
+  userId: string;
+  roles: string[];
+}
+
+const ROLE_TO_REPORTER_TYPE: Record<string, ReporterType> = {
+  [Role.WORKER]: ReporterType.WORKER,
+  [Role.EMPLOYER]: ReporterType.EMPLOYER,
+  [Role.ADMIN]: ReporterType.ADMIN,
+  [Role.SERVICE_PROVIDER]: ReporterType.SERVICE_PROVIDER,
+  [Role.CUSTOMER]: ReporterType.CUSTOMER,
+};
 
 @Injectable()
 export class ReportsService {
@@ -21,6 +46,8 @@ export class ReportsService {
     private reportModel: Model<ReportDocument>,
     @InjectModel(Counter.name)
     private counterModel: Model<CounterDocument>,
+    private usersService: UsersService,
+    private listingsService: ListingsService,
   ) {}
 
   private async generateReportId(): Promise<string> {
@@ -32,22 +59,28 @@ export class ReportsService {
     return `RPT-${String(counter.seq).padStart(3, '0')}`;
   }
 
-  async create(dto: CreateReportInputDto): Promise<ReportDocument> {
-    const reportId = await this.generateReportId();
+  async create(
+    dto: CreateReportInputDto,
+    authUser: AuthUser,
+  ): Promise<ReportDocument> {
+    const user = await this.usersService.findById(authUser.userId);
+
+    const reporterType =
+      ROLE_TO_REPORTER_TYPE[authUser.roles?.[0]] || ReporterType.WORKER;
+
+    const againstData = await this.resolveAgainstEntity(dto.against);
 
     const report = new this.reportModel({
-      ...dto,
-      reportId,
+      reportId: await this.generateReportId(),
       reportedBy: {
-        userId: new Types.ObjectId(dto.reportedBy.userId),
-        userType: dto.reportedBy.userType,
-        name: dto.reportedBy.name,
+        userId: new Types.ObjectId(authUser.userId),
+        userType: reporterType,
+        name: user.name,
       },
-      against: {
-        entityId: new Types.ObjectId(dto.against.entityId),
-        entityType: dto.against.entityType,
-        name: dto.against.name,
-      },
+      against: againstData,
+      type: dto.type,
+      description: dto.description,
+      priority: dto.priority,
       evidence: dto.evidence?.map((e) => ({
         ...e,
         uploadedAt: new Date(),
@@ -55,6 +88,55 @@ export class ReportsService {
     });
 
     return report.save();
+  }
+
+  private async resolveAgainstEntity(against: {
+    entityId?: string;
+    entityType: EntityType;
+  }): Promise<{
+    entityId?: Types.ObjectId;
+    entityType: EntityType;
+    name: string;
+  }> {
+    const { entityType } = against;
+
+    if (entityType === EntityType.PLATFORM) {
+      return {
+        entityType: EntityType.PLATFORM,
+        name: 'LocalHire Platform',
+      };
+    }
+
+    if (!against.entityId) {
+      throw new BadRequestException(
+        'entityId is required for non-platform entity types',
+      );
+    }
+
+    if (PERSON_ENTITY_TYPES.includes(entityType)) {
+      const entityUser = await this.usersService.findById(against.entityId);
+      if (!entityUser.roles.includes(entityType as any)) {
+        throw new BadRequestException(
+          `The specified user does not have the role "${entityType}"`,
+        );
+      }
+      return {
+        entityId: new Types.ObjectId(against.entityId),
+        entityType,
+        name: entityUser.name,
+      };
+    }
+
+    if (entityType === EntityType.JOB_POST) {
+      const listing = await this.listingsService.findOne(against.entityId);
+      return {
+        entityId: new Types.ObjectId(against.entityId),
+        entityType,
+        name: listing.title,
+      };
+    }
+
+    throw new BadRequestException(`Unknown entity type: ${entityType}`);
   }
 
   async getStats(): Promise<ReportStatsOutputDto> {

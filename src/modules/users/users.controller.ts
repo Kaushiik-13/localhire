@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -16,6 +17,7 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { RegisterInputDto } from './dto/inputs/register.input.dto';
@@ -185,6 +187,27 @@ export class UsersController {
     @Request() req: AuthenticatedRequest,
   ) {
     return this.usersService.createByAdmin(input, req.user.userId);
+  }
+
+  @Get('search')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Search users by name/phone (for report against entity)',
+  })
+  @ApiQuery({
+    name: 'q',
+    required: true,
+    description: 'Search query (name or phone)',
+  })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    description:
+      'Filter by role (worker, employer, service_provider, customer)',
+  })
+  async searchUsers(@Query('q') query: string, @Query('role') role?: string) {
+    return this.usersService.search(query, role);
   }
 
   @Get()

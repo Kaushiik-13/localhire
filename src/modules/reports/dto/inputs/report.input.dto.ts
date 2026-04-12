@@ -6,6 +6,7 @@ import {
   IsArray,
   IsObject,
   ValidateNested,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -16,41 +17,28 @@ import {
   ReportAction,
   EvidenceType,
   EntityType,
-  ReporterType,
 } from '../../../../common/enums/report.enum';
 
-class ReportedByInputDto {
-  @ApiProperty({ example: '507f1f77bcf86cd799439011' })
-  @IsString()
-  @IsNotEmpty()
-  userId: string;
-
-  @ApiProperty({ enum: ReporterType, example: ReporterType.WORKER })
-  @IsEnum(ReporterType)
-  @IsNotEmpty()
-  userType: ReporterType;
-
-  @ApiProperty({ example: 'Ramesh Kumar' })
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-}
-
 class AgainstInputDto {
-  @ApiProperty({ example: '507f1f77bcf86cd799439012' })
+  @ApiPropertyOptional({
+    example: '507f1f77bcf86cd799439012',
+    description:
+      'Required when entityType is not "platform". The ID of the user or listing being reported.',
+  })
+  @ValidateIf((o) => o.entityType !== 'platform')
   @IsString()
   @IsNotEmpty()
-  entityId: string;
+  entityId?: string;
 
-  @ApiProperty({ enum: EntityType, example: EntityType.EMPLOYER })
+  @ApiProperty({
+    enum: EntityType,
+    example: EntityType.EMPLOYER,
+    description:
+      'Type of entity being reported. Use "platform" for app-level complaints.',
+  })
   @IsEnum(EntityType)
   @IsNotEmpty()
   entityType: EntityType;
-
-  @ApiProperty({ example: 'Chennai Repairs' })
-  @IsString()
-  @IsNotEmpty()
-  name: string;
 }
 
 class EvidenceInputDto {
@@ -66,12 +54,6 @@ class EvidenceInputDto {
 }
 
 export class CreateReportInputDto {
-  @ApiProperty({ type: ReportedByInputDto })
-  @IsObject()
-  @ValidateNested()
-  @Type(() => ReportedByInputDto)
-  reportedBy: ReportedByInputDto;
-
   @ApiProperty({ type: AgainstInputDto })
   @IsObject()
   @ValidateNested()

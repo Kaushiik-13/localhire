@@ -27,7 +27,7 @@ export class ReportedBy {
 @Schema()
 export class Against {
   @Prop({ type: Types.ObjectId })
-  entityId: Types.ObjectId;
+  entityId?: Types.ObjectId;
 
   @Prop({ enum: EntityType, required: true })
   entityType: EntityType;

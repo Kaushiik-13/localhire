@@ -244,6 +244,23 @@ export class UsersService {
     return this.sanitizeUser(user);
   }
 
+  async search(query: string, role?: string) {
+    const filter: any = {
+      $or: [
+        { name: { $regex: query, $options: 'i' } },
+        { phone: { $regex: query, $options: 'i' } },
+      ],
+    };
+    if (role) {
+      filter.roles = role;
+    }
+    const users = await this.userModel
+      .find(filter)
+      .select('_id name phone roles')
+      .limit(20);
+    return users;
+  }
+
   async updateByAdmin(id: string, input: UpdateUserInputDto, adminId: string) {
     if (id === adminId) {
       throw new ForbiddenException('Cannot update your own account');

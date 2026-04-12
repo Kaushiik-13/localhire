@@ -40,6 +40,7 @@ import { Role } from '../../common/enums/roles.enum';
 interface AuthenticatedRequest {
   user: {
     userId: string;
+    phone?: string;
     roles: string[];
   };
 }
@@ -120,8 +121,11 @@ export class ReportsController {
   )
   @ApiOperation({ summary: 'Create a new report/dispute' })
   @ApiResponse({ status: 201, type: ReportOutputDto })
-  create(@Body() createReportDto: CreateReportInputDto) {
-    return this.reportsService.create(createReportDto);
+  create(
+    @Body() createReportDto: CreateReportInputDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.reportsService.create(createReportDto, req.user);
   }
 
   @Get(':id')
