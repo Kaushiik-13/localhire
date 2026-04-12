@@ -108,4 +108,13 @@ export class JobApplicationsController {
       req.user.userId,
     );
   }
+
+  @Post(':id/withdraw')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.WORKER)
+  @ApiOperation({ summary: 'Withdraw application (worker only)' })
+  @ApiResponse({ type: ApplicationStatusUpdateOutputDto })
+  withdraw(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.jobApplicationsService.withdrawApplication(id, req.user.userId);
+  }
 }

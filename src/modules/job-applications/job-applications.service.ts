@@ -201,6 +201,37 @@ export class JobApplicationsService {
     };
   }
 
+  async withdrawApplication(
+    id: string,
+    workerId: string,
+  ): Promise<ApplicationStatusUpdateOutputDto> {
+    const application = await this.jobApplicationModel.findById(id);
+    if (!application) {
+      throw new NotFoundException('Job application not found');
+    }
+
+    if (application.worker_id.toString() !== workerId) {
+      throw new ForbiddenException(
+        'You can only withdraw your own applications',
+      );
+    }
+
+    if (application.status !== ApplicationStatus.APPLIED) {
+      throw new ForbiddenException(
+        "Only applications with 'applied' status can be withdrawn",
+      );
+    }
+
+    application.status = ApplicationStatus.WITHDRAWN;
+    await application.save();
+
+    return {
+      id: application._id.toString(),
+      status: application.status,
+      message: 'Application withdrawn successfully',
+    };
+  }
+
   async deleteAll(): Promise<DeleteAllOutputDto> {
     const result = await this.jobApplicationModel.deleteMany({}).exec();
     return {
