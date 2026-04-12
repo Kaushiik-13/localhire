@@ -203,14 +203,17 @@ export class JobApplicationsService {
 
   async withdrawApplication(
     id: string,
-    workerId: string,
+    userId: string,
   ): Promise<ApplicationStatusUpdateOutputDto> {
     const application = await this.jobApplicationModel.findById(id);
     if (!application) {
       throw new NotFoundException('Job application not found');
     }
 
-    if (application.worker_id.toString() !== workerId) {
+    const worker = await this.workerModel.findOne({
+      user_id: new Types.ObjectId(userId),
+    });
+    if (!worker || application.worker_id.toString() !== worker._id.toString()) {
       throw new ForbiddenException(
         'You can only withdraw your own applications',
       );
