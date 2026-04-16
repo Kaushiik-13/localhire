@@ -100,6 +100,32 @@ export class AdminController {
     return this.adminService.findUsersByStatus(ApprovalStatus.SUSPENDED);
   }
 
+  @Post('users/:userId/identity-docs/:docId/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Approve a user identity document' })
+  @ApiResponse({ status: 200 })
+  approveIdentityDoc(
+    @Param('userId') userId: string,
+    @Param('docId') docId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.adminService.approveIdentityDoc(userId, docId, req.user.userId);
+  }
+
+  @Post('users/:userId/identity-docs/:docId/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Reject a user identity document' })
+  @ApiResponse({ status: 200 })
+  rejectIdentityDoc(
+    @Param('userId') userId: string,
+    @Param('docId') docId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.adminService.rejectIdentityDoc(userId, docId, req.user.userId);
+  }
+
   // ============ WORKERS ============
 
   @Get('workers/pending')

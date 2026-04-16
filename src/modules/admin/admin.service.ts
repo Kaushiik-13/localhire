@@ -19,6 +19,7 @@ import {
 } from '../../schemas/service-booking.schema';
 import { Skill, SkillDocument } from '../../schemas/skill.schema';
 import { ApprovalStatus } from '../../common/enums/approval.enum';
+import { DocumentVerificationStatus } from '../../common/enums/status.enum';
 
 export interface AdminListResponse<T> {
   count: number;
@@ -517,6 +518,54 @@ export class AdminService {
     );
 
     return serviceProvider;
+  }
+
+  // ============ IDENTITY DOC VERIFICATION ============
+
+  async approveIdentityDoc(
+    userId: string,
+    docId: string,
+    adminId: string,
+  ): Promise<UserDocument> {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    const docIndex = user.identity_docs.findIndex(
+      (d) => (d as any)._id?.toString() === docId,
+    );
+    if (docIndex === -1)
+      throw new NotFoundException('Identity document not found');
+
+    user.identity_docs[docIndex].verification_status =
+      DocumentVerificationStatus.APPROVED;
+    user.identity_docs[docIndex].verified_by = new Types.ObjectId(adminId);
+    user.identity_docs[docIndex].verified_at = new Date();
+
+    await user.save();
+    return user;
+  }
+
+  async rejectIdentityDoc(
+    userId: string,
+    docId: string,
+    adminId: string,
+  ): Promise<UserDocument> {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    const docIndex = user.identity_docs.findIndex(
+      (d) => (d as any)._id?.toString() === docId,
+    );
+    if (docIndex === -1)
+      throw new NotFoundException('Identity document not found');
+
+    user.identity_docs[docIndex].verification_status =
+      DocumentVerificationStatus.REJECTED;
+    user.identity_docs[docIndex].verified_by = new Types.ObjectId(adminId);
+    user.identity_docs[docIndex].verified_at = new Date();
+
+    await user.save();
+    return user;
   }
 
   // ============ DASHBOARD STATS ============
