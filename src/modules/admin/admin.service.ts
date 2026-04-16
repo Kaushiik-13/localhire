@@ -19,7 +19,6 @@ import {
 } from '../../schemas/service-booking.schema';
 import { Skill, SkillDocument } from '../../schemas/skill.schema';
 import { ApprovalStatus } from '../../common/enums/approval.enum';
-import { DocumentVerificationStatus } from '../../common/enums/status.enum';
 
 export interface AdminListResponse<T> {
   count: number;
@@ -179,18 +178,6 @@ export class AdminService {
   }
 
   async approveUser(id: string, adminId: string): Promise<UserDocument> {
-    const existingUser = await this.userModel.findById(id).exec();
-    if (!existingUser) throw new NotFoundException('User not found');
-
-    const updatedIdentityDocs = existingUser.identity_docs.map((doc) => ({
-      document_type: doc.document_type,
-      document_number: doc.document_number,
-      document_url: doc.document_url,
-      verification_status: DocumentVerificationStatus.APPROVED,
-      verified_by: new Types.ObjectId(adminId),
-      verified_at: new Date(),
-    }));
-
     const user = await this.userModel
       .findByIdAndUpdate(
         id,
@@ -198,7 +185,6 @@ export class AdminService {
           approval_status: ApprovalStatus.APPROVED,
           approved_by: new Types.ObjectId(adminId),
           approved_at: new Date(),
-          identity_docs: updatedIdentityDocs,
         },
         { new: true },
       )
@@ -210,18 +196,6 @@ export class AdminService {
   }
 
   async rejectUser(id: string, adminId: string): Promise<UserDocument> {
-    const existingUser = await this.userModel.findById(id).exec();
-    if (!existingUser) throw new NotFoundException('User not found');
-
-    const updatedIdentityDocs = existingUser.identity_docs.map((doc) => ({
-      document_type: doc.document_type,
-      document_number: doc.document_number,
-      document_url: doc.document_url,
-      verification_status: DocumentVerificationStatus.REJECTED,
-      verified_by: new Types.ObjectId(adminId),
-      verified_at: new Date(),
-    }));
-
     const user = await this.userModel
       .findByIdAndUpdate(
         id,
@@ -229,7 +203,6 @@ export class AdminService {
           approval_status: ApprovalStatus.REJECTED,
           approved_by: new Types.ObjectId(adminId),
           approved_at: new Date(),
-          identity_docs: updatedIdentityDocs,
         },
         { new: true },
       )
