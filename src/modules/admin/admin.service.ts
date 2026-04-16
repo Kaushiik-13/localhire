@@ -110,6 +110,20 @@ export class AdminService {
     private skillModel: Model<SkillDocument>,
   ) {}
 
+  private async syncUserApprovalStatus(
+    userId: Types.ObjectId,
+    status: ApprovalStatus,
+    adminId: string,
+  ): Promise<void> {
+    await this.userModel
+      .findByIdAndUpdate(userId, {
+        approval_status: status,
+        approved_by: new Types.ObjectId(adminId),
+        approved_at: new Date(),
+      })
+      .exec();
+  }
+
   // ============ APPROVAL METHODS ============
 
   private mapUserResponse(user: UserDocument): Record<string, unknown> {
@@ -254,6 +268,13 @@ export class AdminService {
       .exec();
 
     if (!worker) throw new NotFoundException('Worker not found');
+
+    await this.syncUserApprovalStatus(
+      worker.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.APPROVED,
+      adminId,
+    );
+
     return worker;
   }
 
@@ -273,6 +294,13 @@ export class AdminService {
       .exec();
 
     if (!worker) throw new NotFoundException('Worker not found');
+
+    await this.syncUserApprovalStatus(
+      worker.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.REJECTED,
+      adminId,
+    );
+
     return worker;
   }
 
@@ -306,6 +334,13 @@ export class AdminService {
       .exec();
 
     if (!employer) throw new NotFoundException('Employer not found');
+
+    await this.syncUserApprovalStatus(
+      employer.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.APPROVED,
+      adminId,
+    );
+
     return employer;
   }
 
@@ -325,6 +360,13 @@ export class AdminService {
       .exec();
 
     if (!employer) throw new NotFoundException('Employer not found');
+
+    await this.syncUserApprovalStatus(
+      employer.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.REJECTED,
+      adminId,
+    );
+
     return employer;
   }
 
@@ -359,6 +401,13 @@ export class AdminService {
 
     if (!serviceProvider)
       throw new NotFoundException('Service provider not found');
+
+    await this.syncUserApprovalStatus(
+      serviceProvider.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.APPROVED,
+      adminId,
+    );
+
     return serviceProvider;
   }
 
@@ -382,6 +431,118 @@ export class AdminService {
 
     if (!serviceProvider)
       throw new NotFoundException('Service provider not found');
+
+    await this.syncUserApprovalStatus(
+      serviceProvider.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.REJECTED,
+      adminId,
+    );
+
+    return serviceProvider;
+  }
+
+  // ============ SUSPEND METHODS ============
+
+  async suspendUser(id: string, adminId: string): Promise<UserDocument> {
+    const user = await this.userModel
+      .findByIdAndUpdate(
+        id,
+        {
+          approval_status: ApprovalStatus.SUSPENDED,
+          approved_by: new Types.ObjectId(adminId),
+          approved_at: new Date(),
+        },
+        { new: true },
+      )
+      .populate('approved_by')
+      .exec();
+
+    if (!user) throw new NotFoundException('User not found');
+    return this.mapUserResponse(user) as unknown as UserDocument;
+  }
+
+  async suspendWorker(id: string, adminId: string): Promise<WorkerDocument> {
+    const worker = await this.workerModel
+      .findByIdAndUpdate(
+        id,
+        {
+          approval_status: ApprovalStatus.SUSPENDED,
+          approved_by: new Types.ObjectId(adminId),
+          approved_at: new Date(),
+        },
+        { new: true },
+      )
+      .populate('user_id')
+      .populate('approved_by')
+      .exec();
+
+    if (!worker) throw new NotFoundException('Worker not found');
+
+    await this.syncUserApprovalStatus(
+      worker.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.SUSPENDED,
+      adminId,
+    );
+
+    return worker;
+  }
+
+  async suspendEmployer(
+    id: string,
+    adminId: string,
+  ): Promise<EmployerDocument> {
+    const employer = await this.employerModel
+      .findByIdAndUpdate(
+        id,
+        {
+          approval_status: ApprovalStatus.SUSPENDED,
+          approved_by: new Types.ObjectId(adminId),
+          approved_at: new Date(),
+        },
+        { new: true },
+      )
+      .populate('user_id')
+      .populate('approved_by')
+      .exec();
+
+    if (!employer) throw new NotFoundException('Employer not found');
+
+    await this.syncUserApprovalStatus(
+      employer.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.SUSPENDED,
+      adminId,
+    );
+
+    return employer;
+  }
+
+  async suspendServiceProvider(
+    id: string,
+    adminId: string,
+  ): Promise<ServiceProviderDocument> {
+    const serviceProvider = await this.serviceProviderModel
+      .findByIdAndUpdate(
+        id,
+        {
+          approval_status: ApprovalStatus.SUSPENDED,
+          approved_by: new Types.ObjectId(adminId),
+          approved_at: new Date(),
+        },
+        { new: true },
+      )
+      .populate('user_id')
+      .populate('approved_by')
+      .exec();
+
+    if (!serviceProvider)
+      throw new NotFoundException('Service provider not found');
+
+    await this.syncUserApprovalStatus(
+      serviceProvider.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.SUSPENDED,
+      adminId,
+    );
+
     return serviceProvider;
   }
 

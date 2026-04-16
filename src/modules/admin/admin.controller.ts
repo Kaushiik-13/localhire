@@ -82,6 +82,24 @@ export class AdminController {
     return this.adminService.rejectUser(id, req.user.userId);
   }
 
+  @Post('users/:id/suspend')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Suspend a user' })
+  @ApiResponse({ status: 200 })
+  suspendUser(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.adminService.suspendUser(id, req.user.userId);
+  }
+
+  @Get('users/suspended')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get all suspended users' })
+  @ApiResponse({ status: 200 })
+  findSuspendedUsers() {
+    return this.adminService.findUsersByStatus(ApprovalStatus.SUSPENDED);
+  }
+
   // ============ WORKERS ============
 
   @Get('workers/pending')
@@ -127,6 +145,24 @@ export class AdminController {
   @ApiResponse({ status: 200 })
   rejectWorker(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.adminService.rejectWorker(id, req.user.userId);
+  }
+
+  @Post('workers/:id/suspend')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Suspend a worker' })
+  @ApiResponse({ status: 200 })
+  suspendWorker(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.adminService.suspendWorker(id, req.user.userId);
+  }
+
+  @Get('workers/suspended')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get all suspended workers' })
+  @ApiResponse({ status: 200 })
+  findSuspendedWorkers() {
+    return this.adminService.findWorkersByStatus(ApprovalStatus.SUSPENDED);
   }
 
   // ============ EMPLOYERS ============
@@ -180,6 +216,27 @@ export class AdminController {
     @Request() req: AuthenticatedRequest,
   ) {
     return this.adminService.rejectEmployer(id, req.user.userId);
+  }
+
+  @Post('employers/:id/suspend')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Suspend an employer' })
+  @ApiResponse({ status: 200 })
+  suspendEmployer(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.adminService.suspendEmployer(id, req.user.userId);
+  }
+
+  @Get('employers/suspended')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get all suspended employers' })
+  @ApiResponse({ status: 200 })
+  findSuspendedEmployers() {
+    return this.adminService.findEmployersByStatus(ApprovalStatus.SUSPENDED);
   }
 
   // ============ SERVICE PROVIDERS ============
@@ -239,6 +296,29 @@ export class AdminController {
     @Request() req: AuthenticatedRequest,
   ) {
     return this.adminService.rejectServiceProvider(id, req.user.userId);
+  }
+
+  @Post('service-providers/:id/suspend')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Suspend a service provider' })
+  @ApiResponse({ status: 200 })
+  suspendServiceProvider(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.adminService.suspendServiceProvider(id, req.user.userId);
+  }
+
+  @Get('service-providers/suspended')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get all suspended service providers' })
+  @ApiResponse({ status: 200 })
+  findSuspendedServiceProviders() {
+    return this.adminService.findServiceProvidersByStatus(
+      ApprovalStatus.SUSPENDED,
+    );
   }
 
   // ============ DASHBOARD ============
