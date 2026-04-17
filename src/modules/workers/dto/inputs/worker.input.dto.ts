@@ -158,6 +158,38 @@ export class UpdateWorkerInputDto {
   approval_status?: ApprovalStatus;
 }
 
+export class UpdateWorkerAddressDto {
+  @ApiPropertyOptional({ example: '45 Gandhi Nagar' })
+  @IsString()
+  @IsOptional()
+  address_line1?: string;
+
+  @ApiPropertyOptional({ example: 'Block B' })
+  @IsString()
+  @IsOptional()
+  address_line2?: string;
+
+  @ApiPropertyOptional({ example: 'Delhi' })
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @ApiPropertyOptional({ example: 'Delhi' })
+  @IsString()
+  @IsOptional()
+  state?: string;
+
+  @ApiPropertyOptional({ example: '110031' })
+  @IsString()
+  @IsOptional()
+  postal_code?: string;
+
+  @ApiPropertyOptional({ example: 'India' })
+  @IsString()
+  @IsOptional()
+  country?: string;
+}
+
 export class UpdateWorkerUserFieldsDto {
   @ApiPropertyOptional({ example: 'John Doe' })
   @IsString()
@@ -178,6 +210,10 @@ export class UpdateWorkerUserFieldsDto {
   @IsString()
   @IsOptional()
   language?: string;
+
+  @ApiPropertyOptional({ type: () => UpdateWorkerAddressDto })
+  @IsOptional()
+  address?: UpdateWorkerAddressDto;
 }
 
 export class UpdateWorkerProfileInputDto {

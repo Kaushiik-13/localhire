@@ -163,7 +163,21 @@ export class WorkersService {
     await this.workerModel.findByIdAndUpdate(worker._id, workerUpdateData);
 
     if (dto.user) {
-      await this.userModel.findByIdAndUpdate(userId, dto.user);
+      const userUpdateData: Record<string, unknown> = { ...dto.user };
+      if (dto.user.address) {
+        delete userUpdateData.address;
+        const user = await this.userModel.findById(userId);
+        const existingAddresses = user?.addresses || [];
+        if (existingAddresses.length > 0) {
+          userUpdateData['addresses.0'] = {
+            ...existingAddresses[0].toObject(),
+            ...dto.user.address,
+          };
+        } else {
+          userUpdateData['$push'] = { addresses: dto.user.address };
+        }
+      }
+      await this.userModel.findByIdAndUpdate(userId, userUpdateData);
     }
 
     return this.getOwnProfile(userId);
