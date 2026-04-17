@@ -93,6 +93,16 @@ export class WorkersController {
     return this.workersService.toggleStatus(req.user.userId);
   }
 
+  @Delete('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete own worker profile and user account' })
+  @ApiResponse({ status: 200, description: 'Account deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Worker profile not found' })
+  async deleteOwnProfile(@Request() req: AuthenticatedRequest) {
+    return this.workersService.deleteOwnProfile(req.user.userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.workersService.findOne(id);

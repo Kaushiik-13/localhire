@@ -265,27 +265,4 @@ export class UsersController {
   ) {
     return this.usersService.updateByAdmin(id, input, req.user.userId);
   }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.ADMIN)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete user (admin only)' })
-  @ApiResponse({
-    status: 200,
-    type: UserMessageOutputDto,
-    description: 'User deleted',
-  })
-  @ApiResponse({
-    status: 404,
-    type: UserMessageOutputDto,
-    description: 'User not found',
-  })
-  async deleteUser(
-    @Param('id') id: string,
-    @Request() req: AuthenticatedRequest,
-  ) {
-    return this.usersService.deleteByAdmin(id, req.user.userId);
-  }
 }

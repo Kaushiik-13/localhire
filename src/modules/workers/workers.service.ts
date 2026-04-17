@@ -168,4 +168,18 @@ export class WorkersService {
 
     return this.getOwnProfile(userId);
   }
+
+  async deleteOwnProfile(userId: string): Promise<{ message: string }> {
+    const worker = await this.workerModel.findOne({
+      user_id: new Types.ObjectId(userId),
+    });
+    if (!worker) {
+      throw new NotFoundException('Worker profile not found');
+    }
+
+    await this.workerModel.findByIdAndDelete(worker._id);
+    await this.userModel.findByIdAndDelete(userId);
+
+    return { message: 'Worker profile and user account deleted successfully' };
+  }
 }

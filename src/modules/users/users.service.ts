@@ -286,18 +286,6 @@ export class UsersService {
     };
   }
 
-  async deleteByAdmin(id: string, adminId: string) {
-    if (id === adminId) {
-      throw new ForbiddenException('Cannot delete your own account');
-    }
-
-    const user = await this.userModel.findByIdAndDelete(id);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return { message: 'User deleted successfully' };
-  }
-
   private generateToken(user: UserDocument): string {
     const payload = { sub: user._id, phone: user.phone, roles: user.roles };
     return this.jwtService.sign(payload);
