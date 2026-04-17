@@ -1,6 +1,6 @@
 export enum UserStatus {
   ACTIVE = 'active',
-  SUSPENDED = 'suspended',
+  DEACTIVE = 'deactive',
 }
 
 export enum ListingStatus {

@@ -8,9 +8,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Worker, WorkerDocument } from '../../schemas/worker.schema';
 import { User, UserDocument } from '../../schemas/user.schema';
-import { CreateWorkerInputDto } from './dto/inputs/worker.input.dto';
-import { UpdateWorkerInputDto } from './dto/inputs/worker.input.dto';
+import {
+  CreateWorkerInputDto,
+  UpdateWorkerProfileInputDto,
+} from './dto/inputs/worker.input.dto';
 import { Role } from '../../common/enums/roles.enum';
+import { UserStatus } from '../../common/enums/status.enum';
 
 @Injectable()
 export class WorkersService {
@@ -81,31 +84,6 @@ export class WorkersService {
       .exec();
   }
 
-  async update(
-    id: string,
-    updateWorkerDto: UpdateWorkerInputDto,
-  ): Promise<WorkerDocument> {
-    const updateData: Record<string, unknown> = { ...updateWorkerDto };
-    if (updateWorkerDto.available_from) {
-      updateData['available_from'] = new Date(updateWorkerDto.available_from);
-    }
-    if (updateWorkerDto.skills) {
-      updateData['skills'] = updateWorkerDto.skills.map(
-        (s) => new Types.ObjectId(s),
-      );
-    }
-
-    const worker = await this.workerModel
-      .findByIdAndUpdate(id, updateData, { new: true })
-      .populate('user_id')
-      .populate('skills')
-      .exec();
-    if (!worker) {
-      throw new NotFoundException('Worker not found');
-    }
-    return worker;
-  }
-
   async remove(id: string): Promise<void> {
     const result = await this.workerModel.findByIdAndDelete(id).exec();
     if (!result) {
@@ -135,5 +113,59 @@ export class WorkersService {
       throw new NotFoundException('Worker not found');
     }
     return worker;
+  }
+
+  async getOwnProfile(userId: string): Promise<WorkerDocument> {
+    const worker = await this.workerModel
+      .findOne({ user_id: new Types.ObjectId(userId) })
+      .populate('user_id')
+      .populate('skills')
+      .exec();
+    if (!worker) {
+      throw new NotFoundException('Worker profile not found');
+    }
+    return worker;
+  }
+
+  async toggleStatus(userId: string): Promise<WorkerDocument> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    user.status =
+      user.status === UserStatus.ACTIVE
+        ? UserStatus.DEACTIVE
+        : UserStatus.ACTIVE;
+    await user.save();
+    return this.getOwnProfile(userId);
+  }
+
+  async updateOwnProfile(
+    userId: string,
+    dto: UpdateWorkerProfileInputDto,
+  ): Promise<WorkerDocument> {
+    const worker = await this.workerModel.findOne({
+      user_id: new Types.ObjectId(userId),
+    });
+    if (!worker) {
+      throw new NotFoundException('Worker profile not found');
+    }
+
+    const workerUpdateData: Record<string, unknown> = { ...dto };
+    delete workerUpdateData.user;
+    if (dto.skills) {
+      workerUpdateData['skills'] = dto.skills.map((s) => new Types.ObjectId(s));
+    }
+    if (dto.available_from) {
+      workerUpdateData['available_from'] = new Date(dto.available_from);
+    }
+
+    await this.workerModel.findByIdAndUpdate(worker._id, workerUpdateData);
+
+    if (dto.user) {
+      await this.userModel.findByIdAndUpdate(userId, dto.user);
+    }
+
+    return this.getOwnProfile(userId);
   }
 }

@@ -10,8 +10,10 @@ import {
   Request,
 } from '@nestjs/common';
 import { WorkersService } from './workers.service';
-import { CreateWorkerInputDto } from './dto/inputs/worker.input.dto';
-import { UpdateWorkerInputDto } from './dto/inputs/worker.input.dto';
+import {
+  CreateWorkerInputDto,
+  UpdateWorkerProfileInputDto,
+} from './dto/inputs/worker.input.dto';
 import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -50,6 +52,47 @@ export class WorkersController {
     return this.workersService.findAll();
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get own worker profile with user details' })
+  @ApiResponse({
+    status: 200,
+    description: 'Worker profile retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Worker profile not found' })
+  async getOwnProfile(@Request() req: AuthenticatedRequest) {
+    return this.workersService.getOwnProfile(req.user.userId);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update own worker profile and user details' })
+  @ApiResponse({
+    status: 200,
+    description: 'Worker profile and user details updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Worker profile not found' })
+  async updateOwnProfile(
+    @Body() dto: UpdateWorkerProfileInputDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.workersService.updateOwnProfile(req.user.userId, dto);
+  }
+
+  @Patch('me/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Toggle own user status between active and deactive',
+  })
+  @ApiResponse({ status: 200, description: 'Status toggled successfully' })
+  @ApiResponse({ status: 404, description: 'Worker profile or user not found' })
+  async toggleStatus(@Request() req: AuthenticatedRequest) {
+    return this.workersService.toggleStatus(req.user.userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.workersService.findOne(id);
@@ -58,14 +101,6 @@ export class WorkersController {
   @Get('user/:userId')
   findByUserId(@Param('userId') userId: string) {
     return this.workersService.findByUserId(userId);
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateWorkerDto: UpdateWorkerInputDto,
-  ) {
-    return this.workersService.update(id, updateWorkerDto);
   }
 
   @Delete(':id')
