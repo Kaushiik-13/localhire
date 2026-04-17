@@ -170,7 +170,7 @@ export class WorkersService {
         const existingAddresses = user?.addresses || [];
         if (existingAddresses.length > 0) {
           userUpdateData['addresses.0'] = {
-            ...existingAddresses[0].toObject(),
+            ...existingAddresses[0],
             ...dto.user.address,
           };
         } else {
