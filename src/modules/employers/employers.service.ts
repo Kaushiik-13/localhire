@@ -142,10 +142,25 @@ export class EmployersService {
         const user = await this.userModel.findById(userId);
         const existingAddresses = user?.addresses || [];
         if (existingAddresses.length > 0) {
-          userUpdateData['addresses.0'] = {
-            ...existingAddresses[0],
-            ...dto.user.address,
-          };
+          const existingAddress = existingAddresses[0];
+          userUpdateData['addresses'] = [
+            {
+              address_line1:
+                dto.user.address.address_line1 ??
+                existingAddress.address_line1,
+              address_line2:
+                dto.user.address.address_line2 ??
+                existingAddress.address_line2,
+              city: dto.user.address.city ?? existingAddress.city,
+              state: dto.user.address.state ?? existingAddress.state,
+              postal_code:
+                dto.user.address.postal_code ?? existingAddress.postal_code,
+              country: dto.user.address.country ?? existingAddress.country,
+              address_type: existingAddress.address_type,
+              latitude: existingAddress.latitude,
+              longitude: existingAddress.longitude,
+            },
+          ];
         } else {
           userUpdateData['$push'] = { addresses: dto.user.address };
         }
