@@ -9,8 +9,12 @@ import { Model, Types } from 'mongoose';
 import { Employer, EmployerDocument } from '../../schemas/employer.schema';
 import { User, UserDocument } from '../../schemas/user.schema';
 import { CreateEmployerInputDto } from './dto/inputs/employer.input.dto';
-import { UpdateEmployerInputDto } from './dto/inputs/employer.input.dto';
+import {
+  UpdateEmployerInputDto,
+  UpdateEmployerProfileInputDto,
+} from './dto/inputs/employer.input.dto';
 import { Role } from '../../common/enums/roles.enum';
+import { UserStatus } from '../../common/enums/status.enum';
 
 @Injectable()
 export class EmployersService {
@@ -89,5 +93,80 @@ export class EmployersService {
     if (!result) {
       throw new NotFoundException('Employer not found');
     }
+  }
+
+  async getOwnProfile(userId: string): Promise<EmployerDocument> {
+    const employer = await this.employerModel
+      .findOne({ user_id: new Types.ObjectId(userId) })
+      .populate('user_id')
+      .exec();
+    if (!employer) {
+      throw new NotFoundException('Employer profile not found');
+    }
+    return employer;
+  }
+
+  async toggleStatus(userId: string): Promise<EmployerDocument> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    user.status =
+      user.status === UserStatus.ACTIVE
+        ? UserStatus.DEACTIVE
+        : UserStatus.ACTIVE;
+    await user.save();
+    return this.getOwnProfile(userId);
+  }
+
+  async updateOwnProfile(
+    userId: string,
+    dto: UpdateEmployerProfileInputDto,
+  ): Promise<EmployerDocument> {
+    const employer = await this.employerModel.findOne({
+      user_id: new Types.ObjectId(userId),
+    });
+    if (!employer) {
+      throw new NotFoundException('Employer profile not found');
+    }
+
+    const employerUpdateData: Record<string, unknown> = { ...dto };
+    delete employerUpdateData.user;
+
+    await this.employerModel.findByIdAndUpdate(employer._id, employerUpdateData);
+
+    if (dto.user) {
+      const userUpdateData: Record<string, unknown> = { ...dto.user };
+      if (dto.user.address) {
+        delete userUpdateData.address;
+        const user = await this.userModel.findById(userId);
+        const existingAddresses = user?.addresses || [];
+        if (existingAddresses.length > 0) {
+          userUpdateData['addresses.0'] = {
+            ...existingAddresses[0],
+            ...dto.user.address,
+          };
+        } else {
+          userUpdateData['$push'] = { addresses: dto.user.address };
+        }
+      }
+      await this.userModel.findByIdAndUpdate(userId, userUpdateData);
+    }
+
+    return this.getOwnProfile(userId);
+  }
+
+  async deleteOwnProfile(userId: string): Promise<{ message: string }> {
+    const employer = await this.employerModel.findOne({
+      user_id: new Types.ObjectId(userId),
+    });
+    if (!employer) {
+      throw new NotFoundException('Employer profile not found');
+    }
+
+    await this.employerModel.findByIdAndDelete(employer._id);
+    await this.userModel.findByIdAndDelete(userId);
+
+    return { message: 'Employer profile and user account deleted successfully' };
   }
 }
