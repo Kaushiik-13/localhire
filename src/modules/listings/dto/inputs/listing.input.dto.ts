@@ -144,6 +144,9 @@ export class CreateListingInputDto {
       salary_max: 50000,
       job_type: 'full-time',
       required_skills: ['507f1f77bcf86cd799439011'],
+      working_days: 'Monday - Friday',
+      eligible_criteria: "Bachelor's degree, 2+ years experience",
+      experience: 2,
     },
   })
   @IsObject()
@@ -220,6 +223,9 @@ export class UpdateListingInputDto {
       salary_max: 50000,
       job_type: 'full-time',
       required_skills: ['507f1f77bcf86cd799439011'],
+      working_days: 'Monday - Friday',
+      eligible_criteria: "Bachelor's degree, 2+ years experience",
+      experience: 2,
     },
   })
   @IsObject()
