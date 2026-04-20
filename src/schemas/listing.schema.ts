@@ -45,6 +45,15 @@ export class JobDetails {
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Skill' }], default: [] })
   required_skills: Types.ObjectId[];
+
+  @Prop()
+  working_days?: string;
+
+  @Prop()
+  eligible_criteria?: string;
+
+  @Prop()
+  experience?: number;
 }
 
 @Schema()

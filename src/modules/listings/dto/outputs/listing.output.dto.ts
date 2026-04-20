@@ -34,6 +34,15 @@ class JobDetailsOutputDto {
 
   @ApiPropertyOptional({ example: ['507f1f77bcf86cd799439011'] })
   required_skills?: string[];
+
+  @ApiPropertyOptional({ example: 'Monday - Friday' })
+  working_days?: string;
+
+  @ApiPropertyOptional({ example: "Bachelor's degree, 2+ years experience" })
+  eligible_criteria?: string;
+
+  @ApiPropertyOptional({ example: 2 })
+  experience?: number;
 }
 
 class ServiceDetailsOutputDto {

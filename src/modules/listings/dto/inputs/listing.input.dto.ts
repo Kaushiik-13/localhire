@@ -34,6 +34,23 @@ class JobDetailsInputDto {
   @IsArray()
   @IsOptional()
   required_skills?: string[];
+
+  @ApiPropertyOptional({ example: 'Monday - Friday' })
+  @IsString()
+  @IsOptional()
+  working_days?: string;
+
+  @ApiPropertyOptional({
+    example: "Bachelor's degree, 2+ years experience",
+  })
+  @IsString()
+  @IsOptional()
+  eligible_criteria?: string;
+
+  @ApiPropertyOptional({ example: 2 })
+  @IsNumber()
+  @IsOptional()
+  experience?: number;
 }
 
 class ServiceDetailsInputDto {
