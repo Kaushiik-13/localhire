@@ -72,10 +72,21 @@ export class CreateServiceProviderInputDto {
   @IsOptional()
   willing_to_relocate?: boolean;
 
+  @ApiPropertyOptional({ example: 'Licensed electrician with 5+ years experience' })
+  @IsString()
+  @IsOptional()
+  bio?: string;
+
   @ApiPropertyOptional({ example: 'https://s3.bucket.com/resume.pdf' })
   @IsString()
   @IsOptional()
   resume_url?: string;
+
+  @ApiPropertyOptional({ example: ['https://example.com/work1.jpg'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  portfolio_urls?: string[];
 
   @ApiPropertyOptional({ example: ['English', 'Hindi'] })
   @IsArray()
@@ -94,6 +105,11 @@ export class UpdateServiceProviderInputDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @ApiPropertyOptional({ example: 'Licensed electrician with 5+ years experience' })
+  @IsString()
+  @IsOptional()
+  bio?: string;
 
   @ApiPropertyOptional({ example: 5 })
   @IsNumber()
@@ -145,6 +161,12 @@ export class UpdateServiceProviderInputDto {
   @IsString()
   @IsOptional()
   resume_url?: string;
+
+  @ApiPropertyOptional({ example: ['https://example.com/work1.jpg'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  portfolio_urls?: string[];
 
   @ApiPropertyOptional({ example: ['English', 'Hindi'] })
   @IsArray()

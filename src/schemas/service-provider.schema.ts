@@ -25,6 +25,9 @@ export class ServiceProvider {
   @Prop({ default: 0 })
   completed_services: number;
 
+  @Prop({ default: 0 })
+  completed_jobs: number;
+
   @Prop({ enum: ApprovalStatus, default: ApprovalStatus.PENDING })
   approval_status: ApprovalStatus;
 
@@ -39,6 +42,9 @@ export class ServiceProvider {
 
   @Prop({ type: String })
   description?: string;
+
+  @Prop()
+  bio?: string;
 
   @Prop()
   job_title?: string;
@@ -57,6 +63,9 @@ export class ServiceProvider {
 
   @Prop()
   resume_url?: string;
+
+  @Prop({ type: [String], default: [] })
+  portfolio_urls: string[];
 
   @Prop({ type: [String], default: [] })
   languages: string[];

@@ -9,33 +9,25 @@ export class CreateServiceBookingDto {
   @IsString()
   @IsNotEmpty()
   listing_id: string;
-
-  @ApiProperty({
-    example: '507f1f77bcf86cd799439012',
-    description: 'The ID of the service provider',
-  })
-  @IsString()
-  @IsNotEmpty()
-  service_provider_id: string;
 }
 
 export class UpdateServiceBookingDto {
   @ApiPropertyOptional({
-    example: 'confirmed',
+    example: 'accepted',
     description: 'The status to update to',
-    enum: ['pending', 'confirmed', 'completed', 'cancelled'],
+    enum: ['applied', 'accepted', 'rejected'],
   })
-  @IsEnum(['pending', 'confirmed', 'completed', 'cancelled'])
+  @IsEnum(['applied', 'accepted', 'rejected'])
   @IsOptional()
   status?: string;
 }
 
 export class UpdateServiceBookingStatusDto {
   @ApiProperty({
-    example: 'confirmed',
+    example: 'accepted',
     description: 'The status to update to',
-    enum: ['pending', 'confirmed', 'completed', 'cancelled'],
+    enum: ['applied', 'accepted', 'rejected'],
   })
-  @IsEnum(['pending', 'confirmed', 'completed', 'cancelled'])
+  @IsEnum(['applied', 'accepted', 'rejected'])
   status: string;
 }

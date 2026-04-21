@@ -67,6 +67,14 @@ export class ListingsService {
       .exec();
   }
 
+  async findByCreator(userId: string): Promise<ListingDocument[]> {
+    return this.listingModel
+      .find({ created_by: new Types.ObjectId(userId) })
+      .populate('created_by')
+      .populate('job_details.required_skills')
+      .exec();
+  }
+
   async findByType(listingType: string): Promise<ListingDocument[]> {
     return this.listingModel
       .find({ listing_type: listingType })

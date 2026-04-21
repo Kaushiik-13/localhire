@@ -19,6 +19,7 @@ import {
   ServiceBookingSchema,
 } from '../../schemas/service-booking.schema';
 import { Skill, SkillSchema } from '../../schemas/skill.schema';
+import { Customer, CustomerSchema } from '../../schemas/customer.schema';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { Skill, SkillSchema } from '../../schemas/skill.schema';
       { name: JobApplication.name, schema: JobApplicationSchema },
       { name: ServiceBooking.name, schema: ServiceBookingSchema },
       { name: Skill.name, schema: SkillSchema },
+      { name: Customer.name, schema: CustomerSchema },
     ]),
   ],
   controllers: [AdminController],

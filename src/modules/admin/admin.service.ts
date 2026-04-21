@@ -8,6 +8,7 @@ import {
   ServiceProvider,
   ServiceProviderDocument,
 } from '../../schemas/service-provider.schema';
+import { Customer, CustomerDocument } from '../../schemas/customer.schema';
 import { Listing, ListingDocument } from '../../schemas/listing.schema';
 import {
   JobApplication,
@@ -100,6 +101,8 @@ export class AdminService {
     private employerModel: Model<EmployerDocument>,
     @InjectModel(ServiceProvider.name)
     private serviceProviderModel: Model<ServiceProviderDocument>,
+    @InjectModel(Customer.name)
+    private customerModel: Model<CustomerDocument>,
     @InjectModel(Listing.name)
     private listingModel: Model<ListingDocument>,
     @InjectModel(JobApplication.name)
@@ -518,6 +521,97 @@ export class AdminService {
     );
 
     return serviceProvider;
+  }
+
+  // ============ CUSTOMERS ============
+
+  async findCustomersByStatus(
+    status: ApprovalStatus,
+  ): Promise<AdminListResponse<CustomerDocument>> {
+    const data = await this.customerModel
+      .find({ approval_status: status })
+      .populate('user_id')
+      .populate('approved_by')
+      .exec();
+    return { count: data.length, data };
+  }
+
+  async approveCustomer(id: string, adminId: string): Promise<CustomerDocument> {
+    const customer = await this.customerModel
+      .findByIdAndUpdate(
+        id,
+        {
+          approval_status: ApprovalStatus.APPROVED,
+          approved_by: new Types.ObjectId(adminId),
+          approved_at: new Date(),
+        },
+        { new: true },
+      )
+      .populate('user_id')
+      .populate('approved_by')
+      .exec();
+
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    await this.syncUserApprovalStatus(
+      customer.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.APPROVED,
+      adminId,
+    );
+
+    return customer;
+  }
+
+  async rejectCustomer(id: string, adminId: string): Promise<CustomerDocument> {
+    const customer = await this.customerModel
+      .findByIdAndUpdate(
+        id,
+        {
+          approval_status: ApprovalStatus.REJECTED,
+          approved_by: new Types.ObjectId(adminId),
+          approved_at: new Date(),
+        },
+        { new: true },
+      )
+      .populate('user_id')
+      .populate('approved_by')
+      .exec();
+
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    await this.syncUserApprovalStatus(
+      customer.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.REJECTED,
+      adminId,
+    );
+
+    return customer;
+  }
+
+  async suspendCustomer(id: string, adminId: string): Promise<CustomerDocument> {
+    const customer = await this.customerModel
+      .findByIdAndUpdate(
+        id,
+        {
+          approval_status: ApprovalStatus.SUSPENDED,
+          approved_by: new Types.ObjectId(adminId),
+          approved_at: new Date(),
+        },
+        { new: true },
+      )
+      .populate('user_id')
+      .populate('approved_by')
+      .exec();
+
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    await this.syncUserApprovalStatus(
+      customer.user_id as unknown as Types.ObjectId,
+      ApprovalStatus.SUSPENDED,
+      adminId,
+    );
+
+    return customer;
   }
 
   // ============ IDENTITY DOC VERIFICATION ============

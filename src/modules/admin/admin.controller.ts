@@ -347,6 +347,80 @@ export class AdminController {
     );
   }
 
+  // ============ CUSTOMERS ============
+
+  @Get('customers/pending')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get all pending customers' })
+  @ApiResponse({ status: 200 })
+  findPendingCustomers() {
+    return this.adminService.findCustomersByStatus(ApprovalStatus.PENDING);
+  }
+
+  @Get('customers/approved')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get all approved customers' })
+  @ApiResponse({ status: 200 })
+  findApprovedCustomers() {
+    return this.adminService.findCustomersByStatus(ApprovalStatus.APPROVED);
+  }
+
+  @Get('customers/rejected')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get all rejected customers' })
+  @ApiResponse({ status: 200 })
+  findRejectedCustomers() {
+    return this.adminService.findCustomersByStatus(ApprovalStatus.REJECTED);
+  }
+
+  @Get('customers/suspended')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get all suspended customers' })
+  @ApiResponse({ status: 200 })
+  findSuspendedCustomers() {
+    return this.adminService.findCustomersByStatus(ApprovalStatus.SUSPENDED);
+  }
+
+  @Post('customers/:id/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Approve a customer' })
+  @ApiResponse({ status: 200 })
+  approveCustomer(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.adminService.approveCustomer(id, req.user.userId);
+  }
+
+  @Post('customers/:id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Reject a customer' })
+  @ApiResponse({ status: 200 })
+  rejectCustomer(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.adminService.rejectCustomer(id, req.user.userId);
+  }
+
+  @Post('customers/:id/suspend')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Suspend a customer' })
+  @ApiResponse({ status: 200 })
+  suspendCustomer(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.adminService.suspendCustomer(id, req.user.userId);
+  }
+
   // ============ DASHBOARD ============
 
   @Get('dashboard/stats')

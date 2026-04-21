@@ -103,7 +103,7 @@ export class Listing {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   created_by: Types.ObjectId;
 
-  @Prop({ enum: ['employer', 'customer'], required: true })
+  @Prop({ enum: ['employer', 'customer', 'service_provider', 'worker'], required: true })
   created_by_role: string;
 
   @Prop({ enum: ApprovalStatus, default: ApprovalStatus.PENDING })

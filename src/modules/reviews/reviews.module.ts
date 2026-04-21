@@ -10,6 +10,15 @@ import {
 import { Worker, WorkerSchema } from '../../schemas/worker.schema';
 import { Employer, EmployerSchema } from '../../schemas/employer.schema';
 import { User, UserSchema } from '../../schemas/user.schema';
+import {
+  ServiceBooking,
+  ServiceBookingSchema,
+} from '../../schemas/service-booking.schema';
+import { Customer, CustomerSchema } from '../../schemas/customer.schema';
+import {
+  ServiceProvider,
+  ServiceProviderSchema,
+} from '../../schemas/service-provider.schema';
 
 @Module({
   imports: [
@@ -19,6 +28,9 @@ import { User, UserSchema } from '../../schemas/user.schema';
       { name: Worker.name, schema: WorkerSchema },
       { name: Employer.name, schema: EmployerSchema },
       { name: User.name, schema: UserSchema },
+      { name: ServiceBooking.name, schema: ServiceBookingSchema },
+      { name: Customer.name, schema: CustomerSchema },
+      { name: ServiceProvider.name, schema: ServiceProviderSchema },
     ]),
   ],
   controllers: [ReviewsController],

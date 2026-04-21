@@ -11,10 +11,15 @@ import {
 } from '../../schemas/service-booking.schema';
 import { Listing, ListingDocument } from '../../schemas/listing.schema';
 import {
+  ServiceProvider,
+  ServiceProviderDocument,
+} from '../../schemas/service-provider.schema';
+import { User, UserDocument } from '../../schemas/user.schema';
+import {
   CreateServiceBookingDto,
   UpdateServiceBookingStatusDto,
 } from './dto/create-service-booking.dto';
-import { BookingStatus } from '../../common/enums/status.enum';
+import { ApplicationStatus } from '../../common/enums/status.enum';
 import { ApprovalStatus } from '../../common/enums/approval.enum';
 import { ListingStatus } from '../../common/enums/status.enum';
 
@@ -25,10 +30,27 @@ export class ServiceBookingsService {
     private serviceBookingModel: Model<ServiceBookingDocument>,
     @InjectModel(Listing.name)
     private listingModel: Model<ListingDocument>,
+    @InjectModel(ServiceProvider.name)
+    private serviceProviderModel: Model<ServiceProviderDocument>,
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>,
   ) {}
+
+  private async getServiceProviderByUserId(
+    userId: string,
+  ): Promise<ServiceProviderDocument> {
+    const serviceProvider = await this.serviceProviderModel
+      .findOne({ user_id: new Types.ObjectId(userId) })
+      .exec();
+    if (!serviceProvider) {
+      throw new NotFoundException('Service provider profile not found');
+    }
+    return serviceProvider;
+  }
 
   async create(
     createServiceBookingDto: CreateServiceBookingDto,
+    userId: string,
   ): Promise<ServiceBookingDocument> {
     const listing = await this.listingModel.findById(
       createServiceBookingDto.listing_id,
@@ -37,13 +59,24 @@ export class ServiceBookingsService {
       throw new NotFoundException('Listing not found');
     }
 
+    const serviceProvider = await this.getServiceProviderByUserId(userId);
+
+    const existingBooking = await this.serviceBookingModel.findOne({
+      listing_id: new Types.ObjectId(createServiceBookingDto.listing_id),
+      service_provider_id: serviceProvider._id,
+    });
+
+    if (existingBooking) {
+      throw new ForbiddenException(
+        'You have already applied to this listing',
+      );
+    }
+
     const booking = new this.serviceBookingModel({
       listing_id: new Types.ObjectId(createServiceBookingDto.listing_id),
-      service_provider_id: new Types.ObjectId(
-        createServiceBookingDto.service_provider_id,
-      ),
+      service_provider_id: serviceProvider._id,
       customer_id: listing.created_by,
-      status: BookingStatus.PENDING,
+      status: ApplicationStatus.APPLIED,
     });
     return booking.save();
   }
@@ -62,7 +95,21 @@ export class ServiceBookingsService {
       .exec();
   }
 
-  async findByListing(listingId: string): Promise<ServiceBookingDocument[]> {
+  async findByListing(
+    listingId: string,
+    userId: string,
+  ): Promise<ServiceBookingDocument[]> {
+    const listing = await this.listingModel.findById(listingId);
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    if (listing.created_by.toString() !== userId) {
+      throw new ForbiddenException(
+        'Only the listing owner can view bookings for this listing',
+      );
+    }
+
     return this.serviceBookingModel
       .find({ listing_id: new Types.ObjectId(listingId) })
       .populate('listing_id')
@@ -81,6 +128,13 @@ export class ServiceBookingsService {
       .exec();
   }
 
+  async findByServiceProviderUserId(
+    userId: string,
+  ): Promise<ServiceBookingDocument[]> {
+    const serviceProvider = await this.getServiceProviderByUserId(userId);
+    return this.findByServiceProvider(serviceProvider._id.toString());
+  }
+
   async findByCustomer(customerId: string): Promise<ServiceBookingDocument[]> {
     return this.serviceBookingModel
       .find({ customer_id: new Types.ObjectId(customerId) })
@@ -92,26 +146,40 @@ export class ServiceBookingsService {
   async updateStatus(
     id: string,
     updateStatusDto: UpdateServiceBookingStatusDto,
+    userId: string,
   ): Promise<ServiceBookingDocument> {
     const booking = await this.serviceBookingModel.findById(id);
     if (!booking) {
       throw new NotFoundException('Service booking not found');
     }
 
-    booking.status = updateStatusDto.status as BookingStatus;
+    const listing = await this.listingModel.findById(booking.listing_id);
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    if (listing.created_by.toString() !== userId) {
+      throw new ForbiddenException(
+        'Only the listing owner can update booking status',
+      );
+    }
+
+    booking.status = updateStatusDto.status as ApplicationStatus;
     return booking.save();
   }
 
   async withdraw(
     id: string,
-    serviceProviderId: string,
+    userId: string,
   ): Promise<ServiceBookingDocument> {
     const booking = await this.serviceBookingModel.findById(id);
     if (!booking) {
       throw new NotFoundException('Service booking not found');
     }
 
-    if (booking.service_provider_id.toString() !== serviceProviderId) {
+    const serviceProvider = await this.getServiceProviderByUserId(userId);
+
+    if (booking.service_provider_id.toString() !== serviceProvider._id.toString()) {
       throw new ForbiddenException('You can only withdraw your own bookings');
     }
 
@@ -119,10 +187,36 @@ export class ServiceBookingsService {
     return booking;
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.serviceBookingModel.findByIdAndDelete(id).exec();
-    if (!result) {
+  async remove(id: string, userId: string): Promise<{ message: string }> {
+    const booking = await this.serviceBookingModel.findById(id);
+    if (!booking) {
       throw new NotFoundException('Service booking not found');
     }
+
+    const listing = await this.listingModel.findById(booking.listing_id);
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    const isListingOwner = listing.created_by.toString() === userId;
+
+    let isServiceProvider = false;
+    try {
+      const serviceProvider = await this.getServiceProviderByUserId(userId);
+      isServiceProvider =
+        booking.service_provider_id.toString() ===
+        serviceProvider._id.toString();
+    } catch {
+      // User is not a service provider
+    }
+
+    if (!isListingOwner && !isServiceProvider) {
+      throw new ForbiddenException(
+        'Only the listing owner or the involved service provider can delete this booking',
+      );
+    }
+
+    await this.serviceBookingModel.findByIdAndDelete(id).exec();
+    return { message: 'Booking deleted successfully' };
   }
 }

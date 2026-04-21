@@ -39,6 +39,9 @@ export class ServiceProviderOutputDto {
   @ApiPropertyOptional({ example: 10 })
   completed_services?: number;
 
+  @ApiPropertyOptional({ example: 0 })
+  completed_jobs?: number;
+
   @ApiPropertyOptional({ enum: ApprovalStatus })
   approval_status?: ApprovalStatus;
 
@@ -60,8 +63,14 @@ export class ServiceProviderOutputDto {
   @ApiPropertyOptional({ example: true })
   willing_to_relocate?: boolean;
 
+  @ApiPropertyOptional({ example: 'Licensed electrician with 5+ years experience' })
+  bio?: string;
+
   @ApiPropertyOptional({ example: 'https://s3.bucket.com/resume.pdf' })
   resume_url?: string;
+
+  @ApiPropertyOptional({ example: ['https://example.com/work1.jpg'] })
+  portfolio_urls?: string[];
 
   @ApiPropertyOptional({ example: ['English', 'Hindi'] })
   languages?: string[];

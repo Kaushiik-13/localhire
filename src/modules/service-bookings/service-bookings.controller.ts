@@ -52,8 +52,14 @@ export class ServiceBookingsController {
     description: 'Service booking created successfully',
   })
   @ApiResponse({ status: 404, description: 'Listing not found' })
-  create(@Body() createServiceBookingDto: CreateServiceBookingDto) {
-    return this.serviceBookingsService.create(createServiceBookingDto);
+  create(
+    @Body() createServiceBookingDto: CreateServiceBookingDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.serviceBookingsService.create(
+      createServiceBookingDto,
+      req.user.userId,
+    );
   }
 
   @Get('available-listings')
@@ -76,13 +82,18 @@ export class ServiceBookingsController {
   }
 
   @Get('listing/:listingId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get service bookings by listing ID' })
   @ApiResponse({
     status: 200,
     description: 'Returns service bookings for a listing',
   })
-  findByListing(@Param('listingId') listingId: string) {
-    return this.serviceBookingsService.findByListing(listingId);
+  @ApiResponse({ status: 403, description: 'Only the listing owner can view bookings' })
+  findByListing(
+    @Param('listingId') listingId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.serviceBookingsService.findByListing(listingId, req.user.userId);
   }
 
   @Get('service-provider/:serviceProviderId')
@@ -106,7 +117,7 @@ export class ServiceBookingsController {
     description: 'Returns service bookings for current service provider',
   })
   findMyBookings(@Request() req: AuthenticatedRequest) {
-    return this.serviceBookingsService.findByServiceProvider(req.user.userId);
+    return this.serviceBookingsService.findByServiceProviderUserId(req.user.userId);
   }
 
   @Get('customer/my-applications')
@@ -134,11 +145,13 @@ export class ServiceBookingsController {
     description: 'Service booking status updated',
   })
   @ApiResponse({ status: 404, description: 'Service booking not found' })
+  @ApiResponse({ status: 403, description: 'Only the listing owner can update booking status' })
   updateStatus(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateServiceBookingStatusDto,
+    @Request() req: AuthenticatedRequest,
   ) {
-    return this.serviceBookingsService.updateStatus(id, updateStatusDto);
+    return this.serviceBookingsService.updateStatus(id, updateStatusDto, req.user.userId);
   }
 
   @Post(':id/withdraw')
@@ -163,7 +176,8 @@ export class ServiceBookingsController {
     description: 'Service booking deleted',
   })
   @ApiResponse({ status: 404, description: 'Service booking not found' })
-  remove(@Param('id') id: string) {
-    return this.serviceBookingsService.remove(id);
+  @ApiResponse({ status: 403, description: 'Only the customer or involved service provider can delete this booking' })
+  remove(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
+    return this.serviceBookingsService.remove(id, req.user.userId);
   }
 }

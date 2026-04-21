@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { WorkersModule } from './modules/workers/workers.module';
 import { ServiceProvidersModule } from './modules/service-providers/service-providers.module';
+import { CustomersModule } from './modules/customers/customers.module';
 import { EmployersModule } from './modules/employers/employers.module';
 import { ListingsModule } from './modules/listings/listings.module';
 import { JobApplicationsModule } from './modules/job-applications/job-applications.module';
@@ -35,6 +36,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     UsersModule,
     WorkersModule,
     ServiceProvidersModule,
+    CustomersModule,
     EmployersModule,
     ListingsModule,
     JobApplicationsModule,

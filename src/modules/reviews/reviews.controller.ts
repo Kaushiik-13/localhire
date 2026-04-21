@@ -34,8 +34,8 @@ export class ReviewsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.EMPLOYER, Role.WORKER)
-  @ApiOperation({ summary: 'Create a review for a job application' })
+  @Roles_decorator(Role.EMPLOYER, Role.WORKER, Role.CUSTOMER, Role.SERVICE_PROVIDER)
+  @ApiOperation({ summary: 'Create a review for a job application or service booking' })
   @ApiResponse({ status: 201, type: ReviewOutputDto })
   create(
     @Body() createReviewDto: CreateReviewInputDto,
@@ -46,7 +46,7 @@ export class ReviewsController {
 
   @Get('my-reviews')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.EMPLOYER, Role.WORKER)
+  @Roles_decorator(Role.EMPLOYER, Role.WORKER, Role.CUSTOMER, Role.SERVICE_PROVIDER)
   @ApiOperation({ summary: 'Get reviews about the logged-in user' })
   @ApiResponse({ status: 200, type: ReviewListOutputDto })
   findMyReviews(@Request() req: AuthenticatedRequest) {

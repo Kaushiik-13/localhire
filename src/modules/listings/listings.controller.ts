@@ -40,7 +40,7 @@ export class ListingsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.EMPLOYER, Role.CUSTOMER)
+  @Roles_decorator(Role.EMPLOYER, Role.CUSTOMER, Role.SERVICE_PROVIDER)
   @ApiOperation({ summary: 'Create a listing' })
   @ApiResponse({ status: 201, type: ListingOutputDto })
   create(
@@ -62,14 +62,13 @@ export class ListingsController {
   }
 
   @Get('my-listings')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.EMPLOYER)
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({
-    summary: 'Get listings created by the authenticated employer',
+    summary: 'Get listings created by the authenticated user',
   })
   @ApiResponse({ type: ListingListOutputDto })
   findMyListings(@Request() req: AuthenticatedRequest) {
-    return this.listingsService.findByEmployer(req.user.userId);
+    return this.listingsService.findByCreator(req.user.userId);
   }
 
   @Get(':id')
@@ -88,7 +87,7 @@ export class ListingsController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.EMPLOYER, Role.CUSTOMER)
+  @Roles_decorator(Role.EMPLOYER, Role.CUSTOMER, Role.SERVICE_PROVIDER)
   @ApiOperation({ summary: 'Update a listing' })
   @ApiResponse({ type: ListingOutputDto })
   update(
@@ -101,7 +100,7 @@ export class ListingsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.EMPLOYER, Role.CUSTOMER)
+  @Roles_decorator(Role.EMPLOYER, Role.CUSTOMER, Role.SERVICE_PROVIDER)
   @ApiOperation({ summary: 'Delete a listing' })
   @ApiResponse({ type: ListingMessageOutputDto })
   remove(@Param('id') id: string, @Request() req: AuthenticatedRequest) {

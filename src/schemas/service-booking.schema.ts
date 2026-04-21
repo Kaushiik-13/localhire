@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { ApiProperty } from '@nestjs/swagger';
-import { BookingStatus } from '../common/enums/status.enum';
+import { ApplicationStatus } from '../common/enums/status.enum';
 
 export type ServiceBookingDocument = ServiceBooking & Document;
 
@@ -29,13 +29,13 @@ export class ServiceBooking {
   service_provider_id: Types.ObjectId;
 
   @ApiProperty({
-    example: 'pending',
+    example: 'applied',
     description: 'The status of the booking',
-    enum: BookingStatus,
-    default: 'pending',
+    enum: ApplicationStatus,
+    default: 'applied',
   })
-  @Prop({ enum: BookingStatus, default: BookingStatus.PENDING })
-  status: BookingStatus;
+  @Prop({ enum: ApplicationStatus, default: ApplicationStatus.APPLIED })
+  status: ApplicationStatus;
 }
 
 export const ServiceBookingSchema =

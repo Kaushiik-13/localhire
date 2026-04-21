@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -13,6 +14,15 @@ import {
 import { Worker, WorkerDocument } from '../../schemas/worker.schema';
 import { Employer, EmployerDocument } from '../../schemas/employer.schema';
 import { User, UserDocument } from '../../schemas/user.schema';
+import {
+  ServiceBooking,
+  ServiceBookingDocument,
+} from '../../schemas/service-booking.schema';
+import { Customer, CustomerDocument } from '../../schemas/customer.schema';
+import {
+  ServiceProvider,
+  ServiceProviderDocument,
+} from '../../schemas/service-provider.schema';
 import { ApplicationStatus } from '../../common/enums/status.enum';
 import { CreateReviewInputDto } from './dto/inputs/create-review.input.dto';
 import {
@@ -30,9 +40,32 @@ export class ReviewsService {
     @InjectModel(Worker.name) private workerModel: Model<WorkerDocument>,
     @InjectModel(Employer.name) private employerModel: Model<EmployerDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(ServiceBooking.name)
+    private serviceBookingModel: Model<ServiceBookingDocument>,
+    @InjectModel(Customer.name)
+    private customerModel: Model<CustomerDocument>,
+    @InjectModel(ServiceProvider.name)
+    private serviceProviderModel: Model<ServiceProviderDocument>,
   ) {}
 
   async create(
+    createReviewDto: CreateReviewInputDto,
+    reviewerId: string,
+  ): Promise<ReviewOutputDto> {
+    if (!createReviewDto.job_application_id && !createReviewDto.booking_id) {
+      throw new BadRequestException(
+        'Either job_application_id or booking_id must be provided',
+      );
+    }
+
+    if (createReviewDto.job_application_id) {
+      return this.createJobReview(createReviewDto, reviewerId);
+    }
+
+    return this.createServiceReview(createReviewDto, reviewerId);
+  }
+
+  private async createJobReview(
     createReviewDto: CreateReviewInputDto,
     reviewerId: string,
   ): Promise<ReviewOutputDto> {
@@ -118,6 +151,88 @@ export class ReviewsService {
     );
   }
 
+  private async createServiceReview(
+    createReviewDto: CreateReviewInputDto,
+    reviewerId: string,
+  ): Promise<ReviewOutputDto> {
+    const booking = await this.serviceBookingModel
+      .findById(createReviewDto.booking_id)
+      .exec();
+
+    if (!booking) {
+      throw new NotFoundException('Service booking not found');
+    }
+
+    if (booking.status !== ApplicationStatus.ACCEPTED) {
+      throw new ForbiddenException('Can only review accepted service bookings');
+    }
+
+    const existingReview = await this.reviewModel
+      .findOne({
+        booking_id: new Types.ObjectId(createReviewDto.booking_id),
+        reviewer_id: new Types.ObjectId(reviewerId),
+      })
+      .exec();
+
+    if (existingReview) {
+      throw new ForbiddenException(
+        'You have already reviewed this booking',
+      );
+    }
+
+    const customer = await this.customerModel.findOne({
+      user_id: new Types.ObjectId(reviewerId),
+    });
+
+    if (customer) {
+      if (booking.customer_id.toString() !== reviewerId) {
+        throw new ForbiddenException(
+          'You can only review bookings for your own listings',
+        );
+      }
+
+      const review = new this.reviewModel({
+        reviewer_id: new Types.ObjectId(reviewerId),
+        review_type: 'service',
+        booking_id: new Types.ObjectId(createReviewDto.booking_id),
+        service_provider_id: booking.service_provider_id,
+        customer_id: new Types.ObjectId(reviewerId),
+        rating: createReviewDto.rating,
+        comment: createReviewDto.comment,
+      });
+      const saved = await review.save();
+      return this.populateReview(saved);
+    }
+
+    const serviceProvider = await this.serviceProviderModel.findOne({
+      user_id: new Types.ObjectId(reviewerId),
+    });
+
+    if (serviceProvider) {
+      if (booking.service_provider_id.toString() !== serviceProvider._id.toString()) {
+        throw new ForbiddenException(
+          'You can only review bookings you applied to',
+        );
+      }
+
+      const review = new this.reviewModel({
+        reviewer_id: new Types.ObjectId(reviewerId),
+        review_type: 'service',
+        booking_id: new Types.ObjectId(createReviewDto.booking_id),
+        service_provider_id: serviceProvider._id,
+        customer_id: booking.customer_id,
+        rating: createReviewDto.rating,
+        comment: createReviewDto.comment,
+      });
+      const saved = await review.save();
+      return this.populateReview(saved);
+    }
+
+    throw new ForbiddenException(
+      'Only customers or service providers involved in this booking can review',
+    );
+  }
+
   private async populateReview(
     review: ReviewDocument,
   ): Promise<ReviewOutputDto> {
@@ -126,6 +241,8 @@ export class ReviewsService {
       .populate('reviewer_id')
       .populate('worker_id')
       .populate('employer_id')
+      .populate('service_provider_id')
+      .populate('customer_id')
       .exec();
 
     if (!populated) {
@@ -165,6 +282,24 @@ export class ReviewsService {
             business_name: obj.employer_id.business_name ?? '',
           }
         : undefined,
+      booking_id: obj.booking_id?.toString(),
+      service_provider_id: obj.service_provider_id
+        ? {
+            id:
+              (obj.service_provider_id._id as any)?.toString() ??
+              obj.service_provider_id.toString(),
+            name: obj.service_provider_id.name ??
+              (obj.service_provider_id.job_title || ''),
+          }
+        : undefined,
+      customer_id: obj.customer_id
+        ? {
+            id:
+              (obj.customer_id._id as any)?.toString() ??
+              obj.customer_id.toString(),
+            name: obj.customer_id.name ?? '',
+          }
+        : undefined,
       rating: obj.rating,
       comment: obj.comment,
       createdAt: obj.createdAt,
@@ -179,6 +314,12 @@ export class ReviewsService {
     const employer = await this.employerModel.findOne({
       user_id: new Types.ObjectId(userId),
     });
+    const customer = await this.customerModel.findOne({
+      user_id: new Types.ObjectId(userId),
+    });
+    const serviceProvider = await this.serviceProviderModel.findOne({
+      user_id: new Types.ObjectId(userId),
+    });
 
     const orConditions: any[] = [];
 
@@ -187,6 +328,12 @@ export class ReviewsService {
     }
     if (employer) {
       orConditions.push({ employer_id: employer._id });
+    }
+    if (customer) {
+      orConditions.push({ customer_id: customer.user_id });
+    }
+    if (serviceProvider) {
+      orConditions.push({ service_provider_id: serviceProvider._id });
     }
 
     if (orConditions.length === 0) {
@@ -198,6 +345,8 @@ export class ReviewsService {
       .populate('reviewer_id')
       .populate('worker_id')
       .populate('employer_id')
+      .populate('service_provider_id')
+      .populate('customer_id')
       .exec();
 
     return {
@@ -213,6 +362,12 @@ export class ReviewsService {
     const employer = await this.employerModel.findOne({
       user_id: new Types.ObjectId(userId),
     });
+    const customer = await this.customerModel.findOne({
+      user_id: new Types.ObjectId(userId),
+    });
+    const serviceProvider = await this.serviceProviderModel.findOne({
+      user_id: new Types.ObjectId(userId),
+    });
 
     const orConditions: any[] = [];
 
@@ -221,6 +376,12 @@ export class ReviewsService {
     }
     if (employer) {
       orConditions.push({ employer_id: employer._id });
+    }
+    if (customer) {
+      orConditions.push({ customer_id: customer.user_id });
+    }
+    if (serviceProvider) {
+      orConditions.push({ service_provider_id: serviceProvider._id });
     }
 
     if (orConditions.length === 0) {
@@ -232,6 +393,8 @@ export class ReviewsService {
       .populate('reviewer_id')
       .populate('worker_id')
       .populate('employer_id')
+      .populate('service_provider_id')
+      .populate('customer_id')
       .exec();
 
     return {
@@ -246,6 +409,8 @@ export class ReviewsService {
       .populate('reviewer_id')
       .populate('worker_id')
       .populate('employer_id')
+      .populate('service_provider_id')
+      .populate('customer_id')
       .exec();
 
     if (!review) {
