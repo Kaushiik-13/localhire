@@ -123,6 +123,14 @@ export class CreateListingInputDto {
   listing_type: string;
 
   @ApiPropertyOptional({
+    enum: ['employer', 'customer', 'service_provider', 'worker'],
+    example: 'employer',
+  })
+  @IsString()
+  @IsOptional()
+  created_by_role?: string;
+
+  @ApiPropertyOptional({
     example: {
       address_line1: '123 Main Street',
       city: 'New York',

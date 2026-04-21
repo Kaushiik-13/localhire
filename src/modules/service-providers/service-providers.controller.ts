@@ -13,6 +13,7 @@ import {
 import { ServiceProvidersService } from './service-providers.service';
 import { CreateServiceProviderInputDto } from './dto/inputs/service-provider.input.dto';
 import { UpdateServiceProviderInputDto } from './dto/inputs/service-provider.input.dto';
+import { ServiceProviderOutputDto } from './dto/outputs/service-provider.output.dto';
 import { ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -39,6 +40,7 @@ export class ServiceProvidersController {
   @ApiOperation({ summary: 'Create a service provider profile' })
   @ApiResponse({
     status: 201,
+    type: ServiceProviderOutputDto,
     description: 'Service provider created successfully',
   })
   @ApiResponse({
@@ -79,7 +81,7 @@ export class ServiceProvidersController {
   @Roles_decorator(Role.SERVICE_PROVIDER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get own service provider profile with user details' })
-  @ApiResponse({ status: 200, description: 'Service provider profile retrieved successfully' })
+  @ApiResponse({ status: 200, type: ServiceProviderOutputDto, description: 'Service provider profile retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Service provider profile not found' })
   async getOwnProfile(@Request() req: AuthenticatedRequest) {
     return this.serviceProvidersService.getOwnProfile(req.user.userId);
@@ -90,7 +92,7 @@ export class ServiceProvidersController {
   @Roles_decorator(Role.SERVICE_PROVIDER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update own service provider profile' })
-  @ApiResponse({ status: 200, description: 'Service provider profile updated successfully' })
+  @ApiResponse({ status: 200, type: ServiceProviderOutputDto, description: 'Service provider profile updated successfully' })
   @ApiResponse({ status: 404, description: 'Service provider profile not found' })
   async updateOwnProfile(
     @Body() dto: UpdateServiceProviderInputDto,

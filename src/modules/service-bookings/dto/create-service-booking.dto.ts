@@ -9,6 +9,14 @@ export class CreateServiceBookingDto {
   @IsString()
   @IsNotEmpty()
   listing_id: string;
+
+  @ApiPropertyOptional({
+    example: '507f1f77bcf86cd799439012',
+    description: 'The ID of the service provider (optional, inferred from JWT if not provided)',
+  })
+  @IsString()
+  @IsOptional()
+  service_provider_id?: string;
 }
 
 export class UpdateServiceBookingDto {

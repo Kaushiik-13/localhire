@@ -59,7 +59,19 @@ export class ServiceBookingsService {
       throw new NotFoundException('Listing not found');
     }
 
-    const serviceProvider = await this.getServiceProviderByUserId(userId);
+    let serviceProvider: ServiceProviderDocument;
+
+    if (createServiceBookingDto.service_provider_id) {
+      const sp = await this.serviceProviderModel
+        .findById(createServiceBookingDto.service_provider_id)
+        .exec();
+      if (!sp) {
+        throw new NotFoundException('Service provider not found');
+      }
+      serviceProvider = sp;
+    } else {
+      serviceProvider = await this.getServiceProviderByUserId(userId);
+    }
 
     const existingBooking = await this.serviceBookingModel.findOne({
       listing_id: new Types.ObjectId(createServiceBookingDto.listing_id),

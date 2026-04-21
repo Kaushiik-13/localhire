@@ -14,6 +14,7 @@ import {
   CreateCustomerInputDto,
   UpdateCustomerProfileInputDto,
 } from './dto/inputs/customer.input.dto';
+import { CustomerOutputDto, CustomerMessageOutputDto } from './dto/outputs/customer.output.dto';
 import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -37,7 +38,7 @@ export class CustomersController {
   @Roles_decorator(Role.CUSTOMER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a customer profile' })
-  @ApiResponse({ status: 201, description: 'Customer created successfully' })
+  @ApiResponse({ status: 201, type: CustomerOutputDto, description: 'Customer created successfully' })
   @ApiResponse({ status: 400, description: 'User not found or not a customer' })
   @ApiResponse({ status: 409, description: 'Customer profile already exists' })
   create(
@@ -52,7 +53,7 @@ export class CustomersController {
   @Roles_decorator(Role.CUSTOMER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get own customer profile with user details' })
-  @ApiResponse({ status: 200, description: 'Customer profile retrieved successfully' })
+  @ApiResponse({ status: 200, type: CustomerOutputDto, description: 'Customer profile retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Customer profile not found' })
   async getOwnProfile(@Request() req: AuthenticatedRequest) {
     return this.customersService.getOwnProfile(req.user.userId);
@@ -63,7 +64,7 @@ export class CustomersController {
   @Roles_decorator(Role.CUSTOMER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update own customer profile' })
-  @ApiResponse({ status: 200, description: 'Customer profile updated successfully' })
+  @ApiResponse({ status: 200, type: CustomerOutputDto, description: 'Customer profile updated successfully' })
   @ApiResponse({ status: 404, description: 'Customer profile not found' })
   async updateOwnProfile(
     @Body() dto: UpdateCustomerProfileInputDto,
@@ -77,7 +78,7 @@ export class CustomersController {
   @Roles_decorator(Role.CUSTOMER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete own customer profile and user account' })
-  @ApiResponse({ status: 200, description: 'Account deleted successfully' })
+  @ApiResponse({ status: 200, type: CustomerMessageOutputDto, description: 'Account deleted successfully' })
   @ApiResponse({ status: 404, description: 'Customer profile not found' })
   async deleteOwnProfile(@Request() req: AuthenticatedRequest) {
     return this.customersService.deleteOwnProfile(req.user.userId);

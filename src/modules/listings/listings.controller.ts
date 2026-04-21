@@ -47,10 +47,11 @@ export class ListingsController {
     @Body() createListingDto: CreateListingInputDto,
     @Request() req: AuthenticatedRequest,
   ) {
+    const createdByRole = createListingDto.created_by_role || req.user.roles[0];
     return this.listingsService.create(
       createListingDto,
       req.user.userId,
-      req.user.roles[0],
+      createdByRole,
     );
   }
 

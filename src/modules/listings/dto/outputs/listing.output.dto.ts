@@ -76,7 +76,7 @@ export class ListingOutputDto {
   @ApiPropertyOptional({ example: '507f1f77bcf86cd799439011' })
   created_by?: string;
 
-  @ApiProperty({ enum: ['employer', 'customer'], example: 'employer' })
+  @ApiProperty({ enum: ['employer', 'customer', 'service_provider', 'worker'], example: 'employer' })
   created_by_role: string;
 
   @ApiProperty({ enum: ApprovalStatus, example: ApprovalStatus.PENDING })
