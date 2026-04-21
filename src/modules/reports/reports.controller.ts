@@ -72,6 +72,29 @@ export class ReportsController {
     res.send(csv);
   }
 
+  @Get('my-reports')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get reports posted by the authenticated user',
+  })
+  @ApiResponse({ status: 200, type: ReportListOutputDto })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false })
+  findMyReports(
+    @Request() req: AuthenticatedRequest,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('status') status?: string,
+  ) {
+    return this.reportsService.findMyReports(
+      req.user.userId,
+      Number(page) || 1,
+      Number(limit) || 20,
+      status,
+    );
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles_decorator(Role.ADMIN)

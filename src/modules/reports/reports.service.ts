@@ -198,6 +198,30 @@ export class ReportsService {
     };
   }
 
+  async findMyReports(
+    userId: string,
+    page: number,
+    limit: number,
+    status?: string,
+  ): Promise<ReportListOutputDto> {
+    const query: any = { 'reportedBy.userId': new Types.ObjectId(userId) };
+
+    if (status) query.status = status;
+
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.reportModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      this.reportModel.countDocuments(query).exec(),
+    ]);
+
+    return { count: total, page, limit, data };
+  }
+
   async findAll(
     page: number,
     limit: number,
