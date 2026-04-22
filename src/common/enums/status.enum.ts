@@ -21,6 +21,8 @@ export enum ApplicationStatus {
   ACCEPTED = 'accepted',
   REJECTED = 'rejected',
   WITHDRAWN = 'withdrawn',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
 }
 
 export enum WorkerAvailability {

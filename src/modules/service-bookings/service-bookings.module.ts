@@ -12,6 +12,7 @@ import {
   ServiceProviderSchema,
 } from '../../schemas/service-provider.schema';
 import { User, UserSchema } from '../../schemas/user.schema';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { User, UserSchema } from '../../schemas/user.schema';
       { name: ServiceProvider.name, schema: ServiceProviderSchema },
       { name: User.name, schema: UserSchema },
     ]),
+    NotificationsModule,
   ],
   controllers: [ServiceBookingsController],
   providers: [ServiceBookingsService],

@@ -64,6 +64,19 @@ export class UploadsService {
     return `${config.folder}/${uniqueName}`;
   }
 
+  private buildUserKey(
+    uploadType: UploadType,
+    userId: string,
+    userName: string,
+    file: Express.Multer.File,
+  ): string {
+    const config = UPLOAD_CONFIG[uploadType];
+    const ext = file.originalname.split('.').pop() || 'bin';
+    const safeName = userName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+    const uniqueName = `${uuidv4()}.${ext}`;
+    return `${userId}_${safeName}/${config.folder}/${uniqueName}`;
+  }
+
   async uploadFile(
     file: Express.Multer.File,
     uploadType: UploadType,
@@ -71,6 +84,51 @@ export class UploadsService {
   ): Promise<{ key: string; url: string }> {
     this.validateFile(file, uploadType);
     const key = this.buildKey(uploadType, entityId, file);
+
+    await this.s3Client.send(
+      new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      }),
+    );
+
+    const url = `https://${this.bucketName}.s3.${this.configService.get('AWS_REGION', 'ap-south-1')}.amazonaws.com/${key}`;
+    return { key, url };
+  }
+
+  async uploadFileWithUserFolder(
+    file: Express.Multer.File,
+    uploadType: UploadType,
+    userId: string,
+    userName: string,
+  ): Promise<{ key: string; url: string }> {
+    this.validateFile(file, uploadType);
+    const key = this.buildUserKey(uploadType, userId, userName, file);
+
+    await this.s3Client.send(
+      new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      }),
+    );
+
+    const url = `https://${this.bucketName}.s3.${this.configService.get('AWS_REGION', 'ap-south-1')}.amazonaws.com/${key}`;
+    return { key, url };
+  }
+
+  async uploadFileToUserFolder(
+    file: Express.Multer.File,
+    userId: string,
+    userName: string,
+  ): Promise<{ key: string; url: string }> {
+    const ext = file.originalname.split('.').pop() || 'bin';
+    const safeName = userName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+    const uniqueName = `${uuidv4()}.${ext}`;
+    const key = `${userId}_${safeName}/${uniqueName}`;
 
     await this.s3Client.send(
       new PutObjectCommand({

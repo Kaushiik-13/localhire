@@ -13,6 +13,7 @@ import {
 import { ServiceBookingsService } from './service-bookings.service';
 import {
   CreateServiceBookingDto,
+  CreateDirectBookingDto,
   UpdateServiceBookingStatusDto,
 } from './dto/create-service-booking.dto';
 import {
@@ -30,6 +31,7 @@ import { Role } from '../../common/enums/roles.enum';
 interface AuthenticatedRequest {
   user: {
     userId: string;
+    roles?: string[];
   };
 }
 
@@ -59,6 +61,47 @@ export class ServiceBookingsController {
     return this.serviceBookingsService.create(
       createServiceBookingDto,
       req.user.userId,
+    );
+  }
+
+  @Post('direct')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.CUSTOMER)
+  @ApiOperation({
+    summary: 'Create a direct booking with a service provider',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Direct booking created successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Service provider not found' })
+  @ApiResponse({ status: 400, description: 'Service provider is not active' })
+  createDirect(
+    @Body() dto: CreateDirectBookingDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.serviceBookingsService.createDirect(req.user.userId, dto);
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get a single booking by ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the booking details',
+  })
+  @ApiResponse({ status: 404, description: 'Booking not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  getById(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.serviceBookingsService.findById(
+      id,
+      req.user.userId,
+      req.user.roles || [],
     );
   }
 
@@ -120,6 +163,20 @@ export class ServiceBookingsController {
     return this.serviceBookingsService.findByServiceProviderUserId(req.user.userId);
   }
 
+  @Get('customer/my-bookings')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.CUSTOMER)
+  @ApiOperation({
+    summary: 'Get all bookings initiated by the current customer',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns all bookings for the current customer',
+  })
+  findMyBookingsCustomer(@Request() req: AuthenticatedRequest) {
+    return this.serviceBookingsService.findByCustomer(req.user.userId);
+  }
+
   @Get('customer/my-applications')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles_decorator(Role.CUSTOMER)
@@ -152,6 +209,45 @@ export class ServiceBookingsController {
     @Request() req: AuthenticatedRequest,
   ) {
     return this.serviceBookingsService.updateStatus(id, updateStatusDto, req.user.userId);
+  }
+
+  @Patch(':id/complete')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Mark booking as completed (customer or provider)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Booking marked as completed',
+  })
+  @ApiResponse({ status: 404, description: 'Booking not found' })
+  @ApiResponse({ status: 400, description: 'Booking must be accepted before completing' })
+  @ApiResponse({ status: 403, description: 'Only the customer or provider can complete' })
+  complete(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.serviceBookingsService.complete(id, req.user.userId);
+  }
+
+  @Post(':id/cancel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.CUSTOMER)
+  @ApiOperation({
+    summary: 'Cancel a booking (customer only)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Booking cancelled successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Booking not found' })
+  @ApiResponse({ status: 400, description: 'Cannot cancel a completed or cancelled booking' })
+  @ApiResponse({ status: 403, description: 'Only the customer can cancel' })
+  cancel(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.serviceBookingsService.cancel(id, req.user.userId);
   }
 
   @Post(':id/withdraw')

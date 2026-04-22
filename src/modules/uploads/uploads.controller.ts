@@ -8,6 +8,7 @@ import {
   UploadedFiles,
   Body,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -16,6 +17,7 @@ import {
   ApiResponse,
   ApiBody,
   ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { UploadsService } from './uploads.service';
 import { UploadResponseDto, UploadMessageDto } from './dto/upload-response.dto';
@@ -25,6 +27,8 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 interface AuthenticatedRequest {
   user: {
     userId: string;
+    phone: string;
+    name: string;
     roles: string[];
   };
 }
@@ -37,6 +41,7 @@ export class UploadsController {
   @Post('profile-photo')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload user profile photo' })
   @ApiBody({
     schema: {
@@ -50,18 +55,20 @@ export class UploadsController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadProfilePhoto(
     @UploadedFile() file: Express.Multer.File,
-    req: AuthenticatedRequest,
+    @Request() req: AuthenticatedRequest,
   ) {
-    return this.uploadsService.uploadFile(
+    return this.uploadsService.uploadFileWithUserFolder(
       file,
       'profile_photo',
       req.user.userId,
+      req.user.name,
     );
   }
 
   @Post('kyc-document')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload KYC/identity document' })
   @ApiBody({
     schema: {
@@ -75,18 +82,20 @@ export class UploadsController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadKycDocument(
     @UploadedFile() file: Express.Multer.File,
-    req: AuthenticatedRequest,
+    @Request() req: AuthenticatedRequest,
   ) {
-    return this.uploadsService.uploadFile(
+    return this.uploadsService.uploadFileWithUserFolder(
       file,
       'kyc_document',
       req.user.userId,
+      req.user.name,
     );
   }
 
   @Post('resume')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload resume (worker or service provider)' })
   @ApiBody({
     schema: {
@@ -100,14 +109,20 @@ export class UploadsController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadResume(
     @UploadedFile() file: Express.Multer.File,
-    req: AuthenticatedRequest,
+    @Request() req: AuthenticatedRequest,
   ) {
-    return this.uploadsService.uploadFile(file, 'resume', req.user.userId);
+    return this.uploadsService.uploadFileWithUserFolder(
+      file,
+      'resume',
+      req.user.userId,
+      req.user.name,
+    );
   }
 
   @Post('portfolio')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload service provider portfolio images' })
   @ApiBody({
     schema: {
@@ -121,18 +136,20 @@ export class UploadsController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadPortfolioImage(
     @UploadedFile() file: Express.Multer.File,
-    req: AuthenticatedRequest,
+    @Request() req: AuthenticatedRequest,
   ) {
-    return this.uploadsService.uploadFile(
+    return this.uploadsService.uploadFileWithUserFolder(
       file,
       'portfolio_image',
       req.user.userId,
+      req.user.name,
     );
   }
 
   @Post('business-logo')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload employer business logo' })
   @ApiBody({
     schema: {
@@ -146,24 +163,31 @@ export class UploadsController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadBusinessLogo(
     @UploadedFile() file: Express.Multer.File,
-    req: AuthenticatedRequest,
+    @Request() req: AuthenticatedRequest,
   ) {
-    return this.uploadsService.uploadFile(
+    return this.uploadsService.uploadFileWithUserFolder(
       file,
       'business_logo',
       req.user.userId,
+      req.user.name,
     );
   }
 
   @Post('listing-images')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload multiple listing images' })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        files: { type: 'array', items: { type: 'string', format: 'binary' } },
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+          description: 'Accepts: jpg, jpeg, png (max 5MB each, up to 10 files)',
+        },
+        listingId: { type: 'string' },
       },
     },
   })
@@ -189,6 +213,7 @@ export class UploadsController {
   @Post('report-evidence')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload report evidence/attachments' })
   @ApiBody({
     schema: {
@@ -202,12 +227,42 @@ export class UploadsController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadReportEvidence(
     @UploadedFile() file: Express.Multer.File,
-    req: AuthenticatedRequest,
+    @Request() req: AuthenticatedRequest,
   ) {
     return this.uploadsService.uploadFile(
       file,
       'report_evidence',
       req.user.userId,
+    );
+  }
+
+  @Post('test')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Test upload endpoint (accepts jpg, png, pdf)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Accepts: jpg, jpeg, png, pdf (max 10MB)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 201, type: UploadResponseDto })
+  @UseInterceptors(FileInterceptor('file'))
+  async testUpload(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.uploadsService.uploadFileToUserFolder(
+      file,
+      req.user.userId,
+      req.user.name,
     );
   }
 
@@ -222,6 +277,7 @@ export class UploadsController {
   }
 
   @Post('image')
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload an image (generic, no auth)' })
   @ApiBody({
     schema: {
@@ -242,6 +298,7 @@ export class UploadsController {
   }
 
   @Post('file')
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload a file (generic, no auth)' })
   @ApiBody({
     schema: {

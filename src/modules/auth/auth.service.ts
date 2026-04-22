@@ -446,7 +446,7 @@ export class AuthService {
   }
 
   private generateToken(user: UserDocument): string {
-    const payload = { sub: user._id, phone: user.phone, roles: user.roles };
+    const payload = { sub: user._id, phone: user.phone, name: user.name, roles: user.roles };
     return this.jwtService.sign(payload);
   }
 

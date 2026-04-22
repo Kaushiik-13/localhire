@@ -38,6 +38,11 @@ export const UPLOAD_CONFIG = {
     allowedTypes: ['image/jpeg', 'image/png', 'application/pdf'],
     maxSize: 10 * 1024 * 1024,
   },
+  test: {
+    folder: 'test',
+    allowedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'],
+    maxSize: 10 * 1024 * 1024,
+  },
 } as const;
 
 export type UploadType = keyof typeof UPLOAD_CONFIG;
