@@ -424,20 +424,40 @@ export class ServiceBookingsService {
   async withdraw(
     id: string,
     userId: string,
+    roles: string[],
   ): Promise<ServiceBookingDocument> {
     const booking = await this.serviceBookingModel.findById(id);
     if (!booking) {
       throw new NotFoundException('Service booking not found');
     }
 
-    const serviceProvider = await this.getServiceProviderByUserId(userId);
-
-    if (booking.service_provider_id.toString() !== serviceProvider._id.toString()) {
-      throw new ForbiddenException('You can only withdraw your own bookings');
+    if (roles.includes('service_provider')) {
+      try {
+        const serviceProvider = await this.getServiceProviderByUserId(userId);
+        if (booking.service_provider_id.toString() === serviceProvider._id.toString()) {
+          await this.serviceBookingModel.findByIdAndDelete(id).exec();
+          return booking;
+        }
+      } catch {
+        // User is not a service provider
+      }
     }
 
-    await this.serviceBookingModel.findByIdAndDelete(id).exec();
-    return booking;
+    if (roles.includes('worker')) {
+      try {
+        const worker = await this.workerModel
+          .findOne({ user_id: new Types.ObjectId(userId) })
+          .exec();
+        if (worker && booking.service_provider_id.toString() === worker._id.toString()) {
+          await this.serviceBookingModel.findByIdAndDelete(id).exec();
+          return booking;
+        }
+      } catch {
+        // User is not a worker
+      }
+    }
+
+    throw new ForbiddenException('You can only withdraw your own bookings');
   }
 
   async remove(id: string, userId: string): Promise<{ message: string }> {

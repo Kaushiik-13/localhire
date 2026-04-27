@@ -243,15 +243,16 @@ export class ServiceBookingsController {
 
   @Post(':id/withdraw')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.SERVICE_PROVIDER)
-  @ApiOperation({ summary: 'Withdraw service booking (service provider only)' })
+  @Roles_decorator(Role.SERVICE_PROVIDER, Role.WORKER)
+  @ApiOperation({ summary: 'Withdraw service booking' })
   @ApiResponse({
     status: 200,
     description: 'Service booking withdrawn',
   })
   @ApiResponse({ status: 404, description: 'Service booking not found' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   withdraw(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
-    return this.serviceBookingsService.withdraw(id, req.user.userId);
+    return this.serviceBookingsService.withdraw(id, req.user.userId, req.user.roles || []);
   }
 
   @Delete(':id')
