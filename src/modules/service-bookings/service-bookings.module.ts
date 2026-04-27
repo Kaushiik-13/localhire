@@ -12,6 +12,7 @@ import {
   ServiceProviderSchema,
 } from '../../schemas/service-provider.schema';
 import { User, UserSchema } from '../../schemas/user.schema';
+import { Skill, SkillSchema } from '../../schemas/skill.schema';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
@@ -21,6 +22,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       { name: Listing.name, schema: ListingSchema },
       { name: ServiceProvider.name, schema: ServiceProviderSchema },
       { name: User.name, schema: UserSchema },
+      { name: Skill.name, schema: SkillSchema },
     ]),
     NotificationsModule,
   ],
