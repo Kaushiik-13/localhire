@@ -11,6 +11,7 @@ import {
   ServiceProvider,
   ServiceProviderSchema,
 } from '../../schemas/service-provider.schema';
+import { Worker, WorkerSchema } from '../../schemas/worker.schema';
 import { User, UserSchema } from '../../schemas/user.schema';
 import { Skill, SkillSchema } from '../../schemas/skill.schema';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -21,6 +22,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       { name: ServiceBooking.name, schema: ServiceBookingSchema },
       { name: Listing.name, schema: ListingSchema },
       { name: ServiceProvider.name, schema: ServiceProviderSchema },
+      { name: Worker.name, schema: WorkerSchema },
       { name: User.name, schema: UserSchema },
       { name: Skill.name, schema: SkillSchema },
     ]),

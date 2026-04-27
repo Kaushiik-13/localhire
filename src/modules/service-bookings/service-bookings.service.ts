@@ -15,6 +15,7 @@ import {
   ServiceProvider,
   ServiceProviderDocument,
 } from '../../schemas/service-provider.schema';
+import { Worker, WorkerDocument } from '../../schemas/worker.schema';
 import { User, UserDocument } from '../../schemas/user.schema';
 import {
   CreateServiceBookingDto,
@@ -35,6 +36,8 @@ export class ServiceBookingsService {
     private listingModel: Model<ListingDocument>,
     @InjectModel(ServiceProvider.name)
     private serviceProviderModel: Model<ServiceProviderDocument>,
+    @InjectModel(Worker.name)
+    private workerModel: Model<WorkerDocument>,
     @InjectModel(User.name)
     private userModel: Model<UserDocument>,
     private notificationsService: NotificationsService,
@@ -163,15 +166,39 @@ export class ServiceBookingsService {
       throw new NotFoundException('Booking not found');
     }
 
-    const isOwner =
-      booking.customer_id.toString() === userId ||
-      booking.service_provider_id.toString() === userId;
-
-    if (!isOwner && !roles.includes('admin')) {
-      throw new ForbiddenException('You do not have access to this booking');
+    if (roles.includes('admin')) {
+      return booking;
     }
 
-    return booking;
+    if (booking.customer_id.toString() === userId) {
+      return booking;
+    }
+
+    if (roles.includes('service_provider')) {
+      try {
+        const serviceProvider = await this.getServiceProviderByUserId(userId);
+        if (booking.service_provider_id.toString() === serviceProvider._id.toString()) {
+          return booking;
+        }
+      } catch {
+        // User is not a service provider
+      }
+    }
+
+    if (roles.includes('worker')) {
+      try {
+        const worker = await this.workerModel
+          .findOne({ user_id: new Types.ObjectId(userId) })
+          .exec();
+        if (worker && booking.service_provider_id.toString() === worker._id.toString()) {
+          return booking;
+        }
+      } catch {
+        // User is not a worker
+      }
+    }
+
+    throw new ForbiddenException('You do not have access to this booking');
   }
 
   async findAvailableListings(
