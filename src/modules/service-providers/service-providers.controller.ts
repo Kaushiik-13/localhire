@@ -66,16 +66,6 @@ export class ServiceProvidersController {
     return this.serviceProvidersService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.serviceProvidersService.findOne(id);
-  }
-
-  @Get('user/:userId')
-  findByUserId(@Param('userId') userId: string) {
-    return this.serviceProvidersService.findByUserId(userId);
-  }
-
   @Get('me')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles_decorator(Role.SERVICE_PROVIDER)
@@ -150,6 +140,16 @@ export class ServiceProvidersController {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 10,
     });
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.serviceProvidersService.findOne(id);
+  }
+
+  @Get('user/:userId')
+  findByUserId(@Param('userId') userId: string) {
+    return this.serviceProvidersService.findByUserId(userId);
   }
 
   @Patch(':id')

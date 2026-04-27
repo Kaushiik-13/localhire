@@ -10,6 +10,9 @@ export class ServiceProviderOutputDto {
   id: string;
 
   @ApiProperty({ example: '507f1f77bcf86cd799439011' })
+  service_provider_id: string;
+
+  @ApiProperty({ example: '507f1f77bcf86cd799439011' })
   user_id: string;
 
   @ApiPropertyOptional({ example: 'Plumber' })

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ServiceProvidersController } from './service-providers.controller';
+import { ServiceProviderMeController } from './service-provider-me.controller';
 import { ServiceProvidersService } from './service-providers.service';
 import {
   ServiceProvider,
@@ -15,7 +16,7 @@ import { User, UserSchema } from '../../schemas/user.schema';
       { name: User.name, schema: UserSchema },
     ]),
   ],
-  controllers: [ServiceProvidersController],
+  controllers: [ServiceProvidersController, ServiceProviderMeController],
   providers: [ServiceProvidersService],
   exports: [ServiceProvidersService],
 })

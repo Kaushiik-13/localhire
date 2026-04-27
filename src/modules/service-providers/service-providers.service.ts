@@ -161,6 +161,7 @@ export class ServiceProvidersService {
     if (!serviceProvider) {
       throw new NotFoundException('Service provider profile not found');
     }
+    (serviceProvider as any).service_provider_id = serviceProvider._id.toString();
     return serviceProvider;
   }
 
