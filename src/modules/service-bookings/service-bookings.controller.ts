@@ -184,22 +184,22 @@ export class ServiceBookingsController {
 
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.CUSTOMER)
+  @Roles_decorator(Role.CUSTOMER, Role.SERVICE_PROVIDER, Role.WORKER)
   @ApiOperation({
-    summary: 'Accept or reject service booking (customer only)',
+    summary: 'Accept or reject service booking',
   })
   @ApiResponse({
     status: 200,
     description: 'Service booking status updated',
   })
   @ApiResponse({ status: 404, description: 'Service booking not found' })
-  @ApiResponse({ status: 403, description: 'Only the listing owner can update booking status' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
   updateStatus(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateServiceBookingStatusDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.serviceBookingsService.updateStatus(id, updateStatusDto, req.user.userId);
+    return this.serviceBookingsService.updateStatus(id, updateStatusDto, req.user.userId, req.user.roles || []);
   }
 
   @Patch(':id/complete')

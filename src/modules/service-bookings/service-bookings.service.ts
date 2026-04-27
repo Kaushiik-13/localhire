@@ -368,6 +368,7 @@ export class ServiceBookingsService {
     id: string,
     updateStatusDto: UpdateServiceBookingStatusDto,
     userId: string,
+    roles: string[],
   ): Promise<ServiceBookingDocument> {
     const booking = await this.serviceBookingModel.findById(id);
     if (!booking) {
@@ -380,21 +381,44 @@ export class ServiceBookingsService {
         throw new NotFoundException('Listing not found');
       }
 
-      if (listing.created_by.toString() !== userId) {
-        throw new ForbiddenException(
-          'Only the listing owner can update booking status',
-        );
+      if (listing.created_by.toString() === userId) {
+        booking.status = updateStatusDto.status as ApplicationStatus;
+        return booking.save();
       }
     } else {
-      if (booking.customer_id.toString() !== userId) {
-        throw new ForbiddenException(
-          'Only the customer can update booking status',
-        );
+      if (booking.customer_id.toString() === userId) {
+        booking.status = updateStatusDto.status as ApplicationStatus;
+        return booking.save();
       }
     }
 
-    booking.status = updateStatusDto.status as ApplicationStatus;
-    return booking.save();
+    if (roles.includes('service_provider')) {
+      try {
+        const serviceProvider = await this.getServiceProviderByUserId(userId);
+        if (booking.service_provider_id.toString() === serviceProvider._id.toString()) {
+          booking.status = updateStatusDto.status as ApplicationStatus;
+          return booking.save();
+        }
+      } catch {
+        // User is not a service provider
+      }
+    }
+
+    if (roles.includes('worker')) {
+      try {
+        const worker = await this.workerModel
+          .findOne({ user_id: new Types.ObjectId(userId) })
+          .exec();
+        if (worker && booking.service_provider_id.toString() === worker._id.toString()) {
+          booking.status = updateStatusDto.status as ApplicationStatus;
+          return booking.save();
+        }
+      } catch {
+        // User is not a worker
+      }
+    }
+
+    throw new ForbiddenException('You do not have access to update this booking status');
   }
 
   async withdraw(
