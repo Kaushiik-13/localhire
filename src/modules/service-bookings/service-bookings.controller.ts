@@ -139,16 +139,6 @@ export class ServiceBookingsController {
     return this.serviceBookingsService.findByListing(listingId, req.user.userId);
   }
 
-  @Get('service-provider/:serviceProviderId')
-  @ApiOperation({ summary: 'Get service bookings by service provider ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns service bookings for a service provider',
-  })
-  findByServiceProvider(@Param('serviceProviderId') serviceProviderId: string) {
-    return this.serviceBookingsService.findByServiceProvider(serviceProviderId);
-  }
-
   @Get('service-provider/my-bookings')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles_decorator(Role.SERVICE_PROVIDER)
@@ -159,6 +149,7 @@ export class ServiceBookingsController {
     status: 200,
     description: 'Returns service bookings for current service provider',
   })
+  @ApiResponse({ status: 404, description: 'Service provider profile not found' })
   findMyBookings(@Request() req: AuthenticatedRequest) {
     return this.serviceBookingsService.findByServiceProviderUserId(req.user.userId);
   }
