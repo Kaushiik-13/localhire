@@ -152,7 +152,7 @@ export class ReportsController {
   }
 
   @Get('users/both')
-  @ApiOperation({ summary: 'Get users with both worker and service_provider roles' })
+  @ApiOperation({ summary: 'Get users with both worker and service_provider roles', security: [] })
   @ApiResponse({ status: 200, description: 'Returns users with both worker and service_provider roles' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -167,7 +167,7 @@ export class ReportsController {
   }
 
   @Get('users/customers')
-  @ApiOperation({ summary: 'Get users with customer role' })
+  @ApiOperation({ summary: 'Get users with customer role', security: [] })
   @ApiResponse({ status: 200, description: 'Returns users with customer role' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -182,7 +182,7 @@ export class ReportsController {
   }
 
   @Get('users/employers')
-  @ApiOperation({ summary: 'Get users with employer role only' })
+  @ApiOperation({ summary: 'Get users with employer role only', security: [] })
   @ApiResponse({ status: 200, description: 'Returns users with employer role only' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
