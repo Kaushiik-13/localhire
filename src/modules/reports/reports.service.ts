@@ -212,13 +212,13 @@ export class ReportsService {
     page: number,
     limit: number,
     status?: string,
-  ): Promise<ReportListOutputDto> {
+  ): Promise<Record<string, any>> {
     const query: any = { 'reportedBy.userId': new Types.ObjectId(userId) };
 
     if (status) query.status = status;
 
     const skip = (page - 1) * limit;
-    const [data, total] = await Promise.all([
+    const [data, total, statusCounts] = await Promise.all([
       this.reportModel
         .find(query)
         .skip(skip)
@@ -226,9 +226,18 @@ export class ReportsService {
         .sort({ createdAt: -1 })
         .exec(),
       this.reportModel.countDocuments(query).exec(),
+      this.reportModel.aggregate([
+        { $match: { 'reportedBy.userId': new Types.ObjectId(userId) } },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
     ]);
 
-    return { count: total, page, limit, data };
+    const summary: Record<string, number> = {};
+    for (const entry of statusCounts) {
+      summary[entry._id] = entry.count;
+    }
+
+    return { count: total, page, limit, data, summary };
   }
 
   async findAll(
