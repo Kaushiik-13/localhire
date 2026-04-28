@@ -151,6 +151,57 @@ export class ReportsController {
     return this.reportsService.create(createReportDto, req.user);
   }
 
+  @Get('users/both')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get users with both worker and service_provider roles' })
+  @ApiResponse({ status: 200, description: 'Returns users with both worker and service_provider roles' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  findBothWorkerAndServiceProvider(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.reportsService.findBothWorkerAndServiceProvider(
+      Number(page) || 1,
+      Number(limit) || 20,
+    );
+  }
+
+  @Get('users/customers')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get users with customer role' })
+  @ApiResponse({ status: 200, description: 'Returns users with customer role' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  findCustomers(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.reportsService.findCustomers(
+      Number(page) || 1,
+      Number(limit) || 20,
+    );
+  }
+
+  @Get('users/employers')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get users with employer role only' })
+  @ApiResponse({ status: 200, description: 'Returns users with employer role only' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  findEmployers(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.reportsService.findEmployers(
+      Number(page) || 1,
+      Number(limit) || 20,
+    );
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles_decorator(Role.ADMIN)

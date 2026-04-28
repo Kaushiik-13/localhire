@@ -7,6 +7,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Report, ReportDocument } from '../../schemas/report.schema';
 import { Counter, CounterDocument } from '../../schemas/counter.schema';
+import { User, UserDocument } from '../../schemas/user.schema';
+import { Worker, WorkerDocument } from '../../schemas/worker.schema';
+import { ServiceProvider, ServiceProviderDocument } from '../../schemas/service-provider.schema';
 import { CreateReportInputDto } from './dto/inputs/report.input.dto';
 import { UpdateReportInputDto } from './dto/inputs/report.input.dto';
 import { ResolveReportInputDto } from './dto/inputs/report.input.dto';
@@ -46,6 +49,12 @@ export class ReportsService {
     private reportModel: Model<ReportDocument>,
     @InjectModel(Counter.name)
     private counterModel: Model<CounterDocument>,
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>,
+    @InjectModel(Worker.name)
+    private workerModel: Model<WorkerDocument>,
+    @InjectModel(ServiceProvider.name)
+    private serviceProviderModel: Model<ServiceProviderDocument>,
     private usersService: UsersService,
     private listingsService: ListingsService,
   ) {}
@@ -364,6 +373,96 @@ export class ReportsService {
       throw new NotFoundException('Report not found');
     }
     return { message: 'Report deleted successfully' };
+  }
+
+  async findBothWorkerAndServiceProvider(
+    page: number,
+    limit: number,
+  ): Promise<{ count: number; page: number; limit: number; data: any[] }> {
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      this.userModel
+        .find({ roles: { $all: ['worker', 'service_provider'] } })
+        .select('-password_hash')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      this.userModel
+        .countDocuments({ roles: { $all: ['worker', 'service_provider'] } })
+        .exec(),
+    ]);
+
+    const userIds = users.map((u) => u._id);
+
+    const [workers, serviceProviders] = await Promise.all([
+      this.workerModel
+        .find({ user_id: { $in: userIds } })
+        .select('_id user_id')
+        .exec(),
+      this.serviceProviderModel
+        .find({ user_id: { $in: userIds } })
+        .select('_id user_id')
+        .exec(),
+    ]);
+
+    const workerMap = new Map(
+      workers.map((w) => [w.user_id.toString(), w._id.toString()]),
+    );
+    const serviceProviderMap = new Map(
+      serviceProviders.map((sp) => [sp.user_id.toString(), sp._id.toString()]),
+    );
+
+    const data = users.map((u) => ({
+      ...u.toObject(),
+      worker_id: workerMap.get(u._id.toString()) || null,
+      service_provider_id: serviceProviderMap.get(u._id.toString()) || null,
+    }));
+
+    return { count: total, page, limit, data };
+  }
+
+  async findCustomers(
+    page: number,
+    limit: number,
+  ): Promise<{ count: number; page: number; limit: number; data: any[] }> {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.userModel
+        .find({ roles: 'customer' })
+        .select('-password_hash')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      this.userModel.countDocuments({ roles: 'customer' }).exec(),
+    ]);
+
+    return { count: total, page, limit, data };
+  }
+
+  async findEmployers(
+    page: number,
+    limit: number,
+  ): Promise<{ count: number; page: number; limit: number; data: any[] }> {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.userModel
+        .find({ roles: { $size: 1, $in: ['employer'] } })
+        .select('-password_hash')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      this.userModel
+        .countDocuments({ roles: { $size: 1, $in: ['employer'] } })
+        .exec(),
+    ]);
+
+    return { count: total, page, limit, data };
   }
 
   async exportCsv(): Promise<string> {
