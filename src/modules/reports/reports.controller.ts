@@ -152,8 +152,6 @@ export class ReportsController {
   }
 
   @Get('users/both')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.ADMIN)
   @ApiOperation({ summary: 'Get users with both worker and service_provider roles' })
   @ApiResponse({ status: 200, description: 'Returns users with both worker and service_provider roles' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -169,8 +167,6 @@ export class ReportsController {
   }
 
   @Get('users/customers')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.ADMIN)
   @ApiOperation({ summary: 'Get users with customer role' })
   @ApiResponse({ status: 200, description: 'Returns users with customer role' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -186,8 +182,6 @@ export class ReportsController {
   }
 
   @Get('users/employers')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles_decorator(Role.ADMIN)
   @ApiOperation({ summary: 'Get users with employer role only' })
   @ApiResponse({ status: 200, description: 'Returns users with employer role only' })
   @ApiQuery({ name: 'page', required: false, type: Number })
