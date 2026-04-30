@@ -51,7 +51,7 @@ $ npm run start:prod
 # unit tests
 $ npm run test
 
-# e2e tests
+# e2e test
 $ npm run test:e2e
 
 # test coverage
