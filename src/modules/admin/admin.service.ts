@@ -890,6 +890,52 @@ export class AdminService {
       .sort((a, b) => b.count - a.count);
   }
 
+  async getTopCitiesByActivity(): Promise<AdminListResponse<any>> {
+    const data = await this.userModel.aggregate([
+      { $unwind: '$addresses' },
+      { $match: { 'addresses.city': { $exists: true, $ne: null } } },
+      { $group: { _id: '$addresses.city', userCount: { $sum: 1 } } },
+      { $sort: { userCount: -1 } },
+      { $limit: 5 },
+      { $project: { city: '$_id', userCount: 1, _id: 0 } },
+    ]);
+    return { count: data.length, data };
+  }
+
+  async getTopCityByListings(): Promise<{
+    city: string;
+    percentage: number;
+    count: number;
+    totalListings: number;
+  }> {
+    const totalListings = await this.listingModel.countDocuments();
+
+    if (totalListings === 0) {
+      return { city: 'N/A', percentage: 0, count: 0, totalListings: 0 };
+    }
+
+    const cityData = await this.listingModel.aggregate([
+      { $match: { 'address.city': { $exists: true, $ne: null } } },
+      { $group: { _id: '$address.city', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 1 },
+    ]);
+
+    if (cityData.length === 0) {
+      return { city: 'N/A', percentage: 0, count: 0, totalListings };
+    }
+
+    const topCity = cityData[0];
+    const percentage = (topCity.count / totalListings) * 100;
+
+    return {
+      city: topCity._id,
+      percentage: Math.round(percentage * 100) / 100,
+      count: topCity.count,
+      totalListings,
+    };
+  }
+
   async getListingsByLocation(): Promise<AdminListResponse<any>> {
     const data = await this.listingModel.aggregate([
       { $match: { 'address.city': { $exists: true, $ne: null } } },

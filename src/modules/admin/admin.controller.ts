@@ -16,6 +16,8 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
+import { TopCitiesOutputDto } from './dto/outputs/top-cities.output.dto';
+import { TopCityOutputDto } from './dto/outputs/top-city.output.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles_decorator } from '../../common/decorators/roles.decorator';
@@ -496,6 +498,24 @@ export class AdminController {
   @ApiResponse({ status: 200 })
   getListingsByJobType() {
     return this.adminService.getListingsByJobType();
+  }
+
+  @Get('dashboard/top-cities')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get top cities by user activity' })
+  @ApiResponse({ status: 200, type: TopCitiesOutputDto })
+  getTopCitiesByActivity() {
+    return this.adminService.getTopCitiesByActivity();
+  }
+
+  @Get('dashboard/top-city')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles_decorator(Role.ADMIN)
+  @ApiOperation({ summary: 'Get top city by listings percentage' })
+  @ApiResponse({ status: 200, type: TopCityOutputDto })
+  getTopCityByListings() {
+    return this.adminService.getTopCityByListings();
   }
 
   @Get('dashboard/listings/by-location')
